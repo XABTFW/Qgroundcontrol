@@ -64,6 +64,8 @@ void QGCLoggingCategoryRegister::setFilterRulesFromSettings(const QString &comma
 
     filterRules += "*Log.debug=false\n";
     filterRules += "qgc.*.debug=false\n";
+    // Filter out Qt Location framework warnings for expected "Bing Tile Above Zoom Level" errors
+    filterRules += "qt.location.*.warning=false\n";
 
     // Set up filters defined in settings
     for (const QString &category : _registeredCategories) {

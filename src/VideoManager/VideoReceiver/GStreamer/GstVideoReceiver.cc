@@ -250,7 +250,8 @@ void GstVideoReceiver::stop()
     }
 
     if (_uri.isEmpty()) {
-        qCWarning(GstVideoReceiverLog) << "Stop called on empty URI";
+        // This is expected during initialization/shutdown, not an error
+        qCDebug(GstVideoReceiverLog) << "Stop called on empty URI";
         return;
     }
 

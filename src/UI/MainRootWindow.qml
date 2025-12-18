@@ -806,10 +806,21 @@ ApplicationWindow {
          }
     }
 
+    Loader {
+        id:yilongdeswarmloader
+
+        anchors.fill:   parent
+        source:"qrc:/qml/Myswarm.qml"
+    }
+    Connections{
+        target: yilongdeswarmloader.item
+        onMessage:yilongdeswarmloader.item.show()
+    }
+
     UTMSPActivationStatusBar{
          id:                         activationbar
          activationStartTimestamp:   UTMSPStateStorage.startTimeStamp
-         activationApproval:         UTMSPStateStorage.showActivationTab && QGroundControl.utmspManager.utmspVehicle.vehicleActivation
+         activationApproval:         UTMSPStateStorage.showActivationTab && (QGroundControl.utmspManager.utmspVehicle ? QGroundControl.utmspManager.utmspVehicle.vehicleActivation : false)
          flightID:                   UTMSPStateStorage.flightID
          anchors.fill:               parent
     }

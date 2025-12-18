@@ -27,6 +27,16 @@ static QtMessageHandler old_handler;
 
 static void msgHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    // Filter out expected Qt Location framework warnings for "Bing Tile Above Zoom Level"
+    // These are expected when zooming beyond available tile levels
+    if (type == QtWarningMsg && 
+        msg.contains("QGeoTileRequestManager") && 
+        msg.contains("Failed to fetch tile") && 
+        msg.contains("Bing Tile Above Zoom Level")) {
+        // Suppress these expected warnings
+        return;
+    }
+
     const char symbols[] = { 'D', 'E', '!', 'X', 'I' };
     QString output = QString("[%1] at %2:%3 - \"%4\"").arg(symbols[type]).arg(context.file).arg(context.line).arg(msg);
 

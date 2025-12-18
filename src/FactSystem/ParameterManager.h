@@ -97,6 +97,7 @@ public:
 
     static constexpr int defaultComponentId = -1;
 
+    void myswarm_param_send(int id, QString name, FactMetaData::ValueType_t tp, float value);
 signals:
     void parametersReadyChanged(bool parametersReady);
     void missingParametersChanged(bool missingParameters);

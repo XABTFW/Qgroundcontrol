@@ -61,6 +61,9 @@ signals:
     void linkStatusesChanged();
     void autoDisconnectChanged(bool autoDisconnect);
 
+
+    void mylink_disconnected(int);
+
 private slots:
     void _commLostCheck();
 

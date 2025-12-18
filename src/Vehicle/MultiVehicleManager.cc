@@ -88,6 +88,10 @@ void MultiVehicleManager::init()
     _initialized = true;
 }
 
+void MultiVehicleManager::mycpp_slot(int n) {
+    emit mydata_disconnected(n);
+}
+
 void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicleId, int componentId, int vehicleFirmwareType, int vehicleType)
 {
     if (componentId != MAV_COMP_ID_AUTOPILOT1) {
@@ -145,15 +149,18 @@ void MultiVehicleManager::_vehicleHeartbeatInfo(LinkInterface* link, int vehicle
     (void) connect(vehicle->vehicleLinkManager(), &VehicleLinkManager::allLinksRemoved, this, &MultiVehicleManager::_deleteVehiclePhase1);
     (void) connect(vehicle->parameterManager(), &ParameterManager::parametersReadyChanged, this, &MultiVehicleManager::_vehicleParametersReadyChanged);
 
+    (void)connect(vehicle->vehicleLinkManager(),  &VehicleLinkManager::mylink_disconnected,       this, &MultiVehicleManager::mycpp_slot);
+
     _vehicles->append(vehicle);
 
+    _myvehicle[vehicleId] = vehicle;
     // Send QGC heartbeat ASAP, this allows PX4 to start accepting commands
     _sendGCSHeartbeat();
 
     SettingsManager::instance()->firmwareUpgradeSettings()->defaultFirmwareType()->setRawValue(vehicleFirmwareType);
 
     emit vehicleAdded(vehicle);
-
+    emit mydatachanged(_vehicles->count(), vehicleId);
     if (_vehicles->count() > 1) {
         qgcApp()->showAppMessage(tr("Connected to Vehicle %1").arg(vehicleId));
     } else {

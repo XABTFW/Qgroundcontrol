@@ -39,7 +39,11 @@ QGeoTiledMapReplyQGC::QGeoTiledMapReplyQGC(QNetworkAccessManager *networkManager
     _initDataFromResources();
 
     (void) connect(this, &QGeoTiledMapReplyQGC::errorOccurred, this, [this](QGeoTiledMapReply::Error error, const QString &errorString) {
-        qCWarning(QGeoTiledMapReplyQGCLog) << error << errorString;
+        // Only log warnings for actual errors, not expected "Bing Tile Above Zoom Level" cases
+        // Compare with the translated string to handle both English and translated versions
+        if (errorString != tr("Bing Tile Above Zoom Level") && errorString != QStringLiteral("Bing Tile Above Zoom Level")) {
+            qCWarning(QGeoTiledMapReplyQGCLog) << error << errorString;
+        }
         setMapImageData(_badTile);
         setMapImageFormat("png");
         setCached(false);
@@ -109,6 +113,8 @@ void QGeoTiledMapReplyQGC::_networkReplyFinished()
     Q_CHECK_PTR(mapProvider);
 
     if (mapProvider->isBingProvider() && (image == _bingNoTileImage)) {
+        // This is expected behavior when zooming beyond available tile levels, not an error
+        qCDebug(QGeoTiledMapReplyQGCLog) << "Bing tile above zoom level for zoom" << tileSpec().zoom();
         setError(QGeoTiledMapReply::CommunicationError, tr("Bing Tile Above Zoom Level"));
         return;
     }

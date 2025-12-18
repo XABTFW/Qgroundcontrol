@@ -218,7 +218,12 @@ void QGCPositionManager::_setPositionSource(QGCPositionSource source)
         #endif
         (void) connect(_currentSource, &QGeoPositionInfoSource::positionUpdated, this, &QGCPositionManager::_positionUpdated);
         (void) connect(_currentSource, &QGeoPositionInfoSource::errorOccurred, this, [](QGeoPositionInfoSource::Error positioningError) {
-            qCWarning(QGCPositionManagerLog) << Q_FUNC_INFO << positioningError;
+            // AccessError is common when geolocation service is disabled, log as debug instead of warning
+            if (positioningError == QGeoPositionInfoSource::AccessError) {
+                qCDebug(QGCPositionManagerLog) << Q_FUNC_INFO << "AccessError (geolocation service may be disabled)";
+            } else {
+                qCWarning(QGCPositionManagerLog) << Q_FUNC_INFO << positioningError;
+            }
         });
 
         // (void) connect(QGCCompass::instance(), &QGCCompass::positionUpdated, this, &QGCPositionManager::_positionUpdated);

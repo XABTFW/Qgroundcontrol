@@ -285,6 +285,10 @@ qt_add_executable(${CMAKE_PROJECT_NAME}
     WIN32
     MACOSX_BUNDLE
     ${QGC_RESOURCES}
+    src/Mavlinktest2.h
+    src/Mavlinktest2.cpp
+    src/swarm_send.cpp
+    src/swarm_send.h
 )
 
 if(WIN32)

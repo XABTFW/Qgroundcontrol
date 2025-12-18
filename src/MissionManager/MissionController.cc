@@ -231,6 +231,7 @@ void MissionController::sendToVehicle(void)
         } else {
             sendItemsToVehicle(_managerVehicle, _visualItems);
         }
+        qDebug()<<__FUNCTION__;
         setDirty(false);
     }
 }

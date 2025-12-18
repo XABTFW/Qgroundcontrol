@@ -50,6 +50,14 @@ ToolStripActionList {
         GuidedActionRTL { },
         GuidedActionPause { },
         FlyViewAdditionalActionsButton { },
-        GuidedActionGripper { }
+        GuidedActionGripper { },
+        ToolStripAction {
+            text:           qsTr("my swarm")
+            iconSource:     "/qmlimages/Plan.svg"
+
+            onTriggered:{
+                yilongdeswarmloader.item.message()
+            }
+        }
     ]
 }

@@ -122,7 +122,7 @@ void PlanManager::_writeMissionCount(void)
             _planType,
             0
         );
-
+        qDebug()<<__FUNCTION__;
         _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), message);
     }
     _startAckTimeout(AckMissionRequest);
@@ -463,7 +463,7 @@ void PlanManager::_handleMissionItem(const mavlink_message_t& message)
             // Home is in position 0
             item->setParam1((int)item->param1() + 1);
         }
-
+        qDebug()<<__FUNCTION__<<__LINE__<<"par :"<<seq<<command<<frame<<param1<<param2<<param3<<param4<<param5<<param6<<param7<<autoContinue<<isCurrentItem;
         _missionItems.append(item);
     } else {
         qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionItem %1 mission item received item index which was not requested, disregrarding:").arg(_planTypeString()) << seq;
@@ -527,6 +527,7 @@ void PlanManager::_handleMissionRequest(const mavlink_message_t& message)
     }
 
     MissionItem* item = _writeMissionItems[missionRequestSeq];
+    qDebug()<<__FUNCTION__<<missionRequestSeq;
     qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionRequest %1 sequenceNumber:command").arg(_planTypeString()) << missionRequestSeq << item->command();
 
     SharedLinkInterfacePtr sharedLink = _vehicle->vehicleLinkManager()->primaryLink().lock();
@@ -649,19 +650,26 @@ void PlanManager::_mavlinkMessageReceived(const mavlink_message_t& message)
 {
     switch (message.msgid) {
     case MAVLINK_MSG_ID_MISSION_COUNT:
+
+        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_COUNT";
         _handleMissionCount(message);
         break;
 
     case MAVLINK_MSG_ID_MISSION_ITEM_INT:
+        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_ITEM_INT";
         _handleMissionItem(message);
         break;
 
     case MAVLINK_MSG_ID_MISSION_REQUEST:
     case MAVLINK_MSG_ID_MISSION_REQUEST_INT:
+
+        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_REQUEST_INT";
         _handleMissionRequest(message);
         break;
 
     case MAVLINK_MSG_ID_MISSION_ACK:
+
+        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_ACK";
         _handleMissionAck(message);
         break;
     }

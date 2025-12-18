@@ -26,6 +26,10 @@ target_sources(${CMAKE_PROJECT_NAME}
         PX4LogParser.h
         ULogParser.cc
         ULogParser.h
+        Mavlinktest.h
+        Mavlinktest.cpp
+    
+      
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

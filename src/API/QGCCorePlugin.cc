@@ -102,6 +102,17 @@ const QVariantList &QGCCorePlugin::analyzePages()
             tr("Vibration"),
             QUrl::fromUserInput(QStringLiteral("qrc:/qml/VibrationPage.qml")),
             QUrl::fromUserInput(QStringLiteral("qrc:/qmlimages/VibrationPageIcon")))),
+
+         // ✅ 添加你自己的页面
+        QVariant::fromValue(new QmlComponentInfo(
+            tr("MAVLink Test"), // 显示在 Analyze 页签里的名字
+            QUrl::fromUserInput(QStringLiteral("qrc:/qml/MavlinkTestPage.qml")),
+            QUrl::fromUserInput(QStringLiteral("qqrc:/qmlimages/VibrationPageIcon")))),
+
+         QVariant::fromValue(new QmlComponentInfo(
+            tr("swarm"), // 显示在 Analyze 页签里的名字
+            QUrl::fromUserInput(QStringLiteral("qrc:/qml/swarm.qml")),
+            QUrl::fromUserInput(QStringLiteral("qrc:/qmlimages/MAVLinkInspector.svg")))),
     };
 
     return analyzeList;

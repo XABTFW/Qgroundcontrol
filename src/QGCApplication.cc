@@ -70,6 +70,8 @@
 #include "VehicleComponent.h"
 #include "VideoManager.h"
 
+#include "Mavlinktest.h"
+//#include "swarm.h"
 #ifndef QGC_DISABLE_MAVLINK_INSPECTOR
 #include "MAVLinkInspectorController.h"
 #endif
@@ -87,6 +89,10 @@
 #include <sys/types.h>
 #endif
 #endif
+
+
+#include "Mavlinktest2.h"
+#include "swarm_send.h"
 
 QGC_LOGGING_CATEGORY(QGCApplicationLog, "qgc.qgcapplication")
 
@@ -315,6 +321,14 @@ void QGCApplication::init()
     qmlRegisterSingletonType<QGCMAVLink>("MAVLink", 1, 0, "MAVLink", mavlinkSingletonFactory);
 
 
+    qmlRegisterType<Mavlinktest2> ("QGroundControl.Controllers", 1, 0, "Mavlinktest2");
+    qmlRegisterType<Swarm_send> ("QGroundControl.Controllers", 1, 0, "Swarmsend");
+
+    qmlRegisterType<Mavlinktest>("QGroundControl.Controllers", 1, 0, "Mavlinktest");
+
+   // qmlRegisterType<swarm>("QGroundControl.Controllers", 1, 0, "swarm");
+
+    
     // Although this should really be in _initForNormalAppBoot putting it here allowws us to create unit tests which pop up more easily
     if(QFontDatabase::addApplicationFont(":/fonts/opensans") < 0) {
         qCWarning(QGCApplicationLog) << "Could not load /fonts/opensans font";

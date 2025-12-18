@@ -390,6 +390,11 @@ void ParameterManager::_factRawValueUpdated(const QVariant &rawValue)
     _factRawValueUpdateWorker(fact->componentId(), fact->name(), fact->type(), rawValue);
 }
 
+void ParameterManager::myswarm_param_send(int id, QString name, FactMetaData::ValueType_t tp, float value)
+{
+    _sendParamSetToVehicle(1, name, tp, value);
+}
+
 void ParameterManager::_ftpDownloadComplete(const QString &fileName, const QString &errorMsg)
 {
     bool continueWithDefaultParameterdownload = true;

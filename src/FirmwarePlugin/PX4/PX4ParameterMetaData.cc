@@ -18,6 +18,7 @@
 #include <QtCore/QDir>
 #include <QtCore/QDebug>
 #include <QtCore/QXmlStreamReader>
+#include <climits>
 
 QGC_LOGGING_CATEGORY(PX4ParameterMetaDataLog, "PX4ParameterMetaDataLog")
 
@@ -111,6 +112,7 @@ void PX4ParameterMetaData::loadParameterFactMetaDataFile(const QString& metaData
     FactMetaData*   metaData = nullptr;
     int             xmlState = XmlStateNone;
     bool            badMetaData = true;
+    bool            hasBitmask = false;  // Track if current parameter has bitmask elements
     
     while (!xml.atEnd()) {
         if (xml.isStartElement()) {
@@ -272,7 +274,26 @@ void PX4ParameterMetaData::loadParameterFactMetaDataFile(const QString& metaData
                             qCDebug(PX4ParameterMetaDataLog) << "Max:" << text;
 
                             QVariant varMax;
-                            if (metaData->convertAndValidateRaw(text, false /* convertOnly */, varMax, errorString)) {
+                            // For INT32 parameters, check if max value exceeds INT32_MAX
+                            // This can happen with bitmask parameters (e.g., 4294967295 for bits 0-31)
+                            // Use convertOnly=true to skip strict validation, then clamp to INT32_MAX if needed
+                            bool convertOnly = false;
+                            bool needsClamping = false;
+                            if (metaData->type() == FactMetaData::valueTypeInt32) {
+                                bool ok;
+                                qulonglong maxValue = text.toULongLong(&ok);
+                                if (ok && maxValue > static_cast<qulonglong>(INT32_MAX)) {
+                                    convertOnly = true;  // Skip validation since value exceeds INT32_MAX
+                                    needsClamping = true;
+                                }
+                            }
+                            
+                            if (metaData->convertAndValidateRaw(text, convertOnly, varMax, errorString)) {
+                                // For INT32 parameters with max exceeding INT32_MAX, clamp it
+                                if (needsClamping) {
+                                    varMax = QVariant(static_cast<int32_t>(INT32_MAX));
+                                    qCDebug(PX4ParameterMetaDataLog) << "Clamping max value from" << text << "to INT32_MAX for parameter:" << metaData->name();
+                                }
                                 metaData->setRawMax(varMax);
                             } else {
                                 qCWarning(PX4ParameterMetaDataLog) << "Invalid max value, name:" << metaData->name() << " type:" << metaData->type() << " max:" << text << " error:" << errorString;
@@ -339,6 +360,8 @@ void PX4ParameterMetaData::loadParameterFactMetaDataFile(const QString& metaData
                             metaData->addEnumInfo(tr("Disabled"), enumValue);
 
                         } else if (elementName == "bitmask") {
+                            // Mark that this parameter has bitmask elements
+                            hasBitmask = true;
                             // doing nothing individual bits will follow anyway. May be used for sanity checking.
 
                         } else if (elementName == "bit") {
@@ -349,10 +372,12 @@ void PX4ParameterMetaData::loadParameterFactMetaDataFile(const QString& metaData
                                 qCDebug(PX4ParameterMetaDataLog) << "parameter value:"
                                                                  << "index:" << bit << "description:" << bitDescription;
 
-                                if (bit < 31) {
-                                    QVariant bitmaskRawValue = 1 << bit;
+                                if (bit < 32) {
+                                    QVariant bitmaskRawValue = 1ULL << bit;
                                     QVariant bitmaskValue;
                                     QString errorString;
+                                    // For bitmask parameters, use convertOnly=true to skip strict validation
+                                    // since bitmask values may exceed signed int32 max when all bits are set
                                     if (metaData->convertAndValidateRaw(bitmaskRawValue, true, bitmaskValue, errorString)) {
                                         metaData->addBitmaskInfo(bitDescription, bitmaskValue);
                                     } else {
@@ -388,6 +413,7 @@ void PX4ParameterMetaData::loadParameterFactMetaDataFile(const QString& metaData
                 // Reset for next parameter
                 metaData = nullptr;
                 badMetaData = false;
+                hasBitmask = false;
                 xmlState = XmlStateFoundGroup;
             } else if (elementName == "group") {
                 xmlState = XmlStateFoundVersion;

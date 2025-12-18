@@ -54,12 +54,17 @@ public:
     Vehicle *activeVehicle() const { return _activeVehicle; }
     void setActiveVehicle(Vehicle *vehicle);
 
+    QMap<int,Vehicle*> my_vehicles() {return _myvehicle;}
 signals:
     void vehicleAdded(Vehicle *vehicle);
     void vehicleRemoved(Vehicle *vehicle);
     void activeVehicleAvailableChanged(bool activeVehicleAvailable);
     void parameterReadyVehicleAvailableChanged(bool parameterReadyVehicleAvailable);
     void activeVehicleChanged(Vehicle *activeVehicle);
+
+
+    void mydatachanged(QVariant n, QVariant sysid); // 链接时编队显示
+    void mydata_disconnected(QVariant sysid);
 
 private slots:
     void _deleteVehiclePhase1(Vehicle *vehicle); /// This slot is connected to the Vehicle::allLinksDestroyed signal such that the Vehicle is deleted and all other right things happen when the Vehicle goes away.
@@ -69,6 +74,8 @@ private slots:
     void _sendGCSHeartbeat();
     void _vehicleHeartbeatInfo(LinkInterface *link, int vehicleId, int componentId, int vehicleFirmwareType, int vehicleType);
     void _requestProtocolVersion(unsigned version) const; /// This slot is connected to the Vehicle::requestProtocolVersion signal such that the vehicle manager tries to switch MAVLink to v2 if all vehicles support it
+
+    void mycpp_slot(int n);
 
 private:
     bool _vehicleExists(int vehicleId);
@@ -88,6 +95,9 @@ private:
     Vehicle *_activeVehicle = nullptr;              ///< Currently active vehicle from a ui perspective
     QList<int> _ignoreVehicleIds;                   ///< List of vehicle id for which we ignore further communication
     bool _initialized = false;
+
+
+    QMap<int,Vehicle*> _myvehicle;
 
     static constexpr int kGCSHeartbeatRateMSecs = 1000;  ///< Heartbeat rate
 };
