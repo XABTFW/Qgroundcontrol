@@ -89,7 +89,7 @@ ApplicationWindow {
         readonly property var       guidedControllerFlyView:        flyView.guidedController
 
         // Number of QGCTextField's with validation errors. Used to prevent closing panels with validation errors.
-        property int                validationErrorCount:           0 
+        property int                validationErrorCount:           0
 
         // Property to manage RemoteID quick access to settings page
         property bool               commingFromRIDIndicator:        false
@@ -123,7 +123,9 @@ ApplicationWindow {
     function showPlanView() {
         flyView.visible = false
         planView.visible = true
-        viewer3DWindow.close()
+        if (flyView.viewer3DWindow) {
+            flyView.viewer3DWindow.close()
+        }
     }
 
     function showFlyView() {
@@ -274,7 +276,7 @@ ApplicationWindow {
         color:          QGroundControl.globalPalette.window
     }
 
-    FlyView { 
+    FlyView {
         id:                     flyView
         anchors.fill:           parent
         utmspSendActTrigger:    _utmspSendActTrigger
@@ -492,7 +494,7 @@ ApplicationWindow {
         onClosed: {
             toolDrawer.toolSource = ""
         }
-        
+
         Rectangle {
             id:             toolDrawerToolbar
             anchors.left:   parent.left
@@ -727,7 +729,7 @@ ApplicationWindow {
                     anchors.centerIn:   parent
                     text:               ">"
                     color:              QGroundControl.globalPalette.buttonText
-                }  
+                }
 
                 QGCMouseArea {
                     fillItem: parent

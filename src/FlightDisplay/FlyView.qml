@@ -36,6 +36,7 @@ Item {
     // These should only be used by MainRootWindow
     property var planController:    _planController
     property var guidedController:  _guidedController
+    property alias viewer3DWindow:  viewer3DWindow
 
     // Properties of UTM adapter
     property bool utmspSendActTrigger: false

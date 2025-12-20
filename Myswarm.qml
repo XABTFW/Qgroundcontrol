@@ -105,8 +105,10 @@ Window {
              //   console.log("++++++++++",_sysid_list[n],main_node_name[grp_n - 1],grp_n,idpos_map[_sysid_list[n]][0],idpos_map[_sysid_list[n]][1])
              //   if(modelmp[main_node_name[grp_n - 1]] === 0)return
 
-                if (modelmp[_sysid_list[n]].group_id === modelmp[main_node_name[grp_n - 1]].group_id) { // 说明是同一组
-                    if ( if_main_node(modelmp[_sysid_list[n]].objectName) ) {
+                var currentModel = modelmp[_sysid_list[n]]
+                var mainModel = modelmp[main_node_name[grp_n - 1]]
+                if (currentModel && mainModel && currentModel.group_id === mainModel.group_id) { // 说明是同一组
+                    if ( if_main_node(currentModel.objectName) ) {
                         swarm_send.caculate_pos(_sysid_list[n], 0, 0, 0)
                         continue;
                     }
@@ -5066,7 +5068,7 @@ if (modelmp[main_node_name[1]].is_connected === true)
                 property real zOffset: 0
 
                 acceptedButtons:Qt.LeftButton | Qt.RightButton
-                onPressed: {
+                onPressed: function(mouse) {
                     var if_right = pressedButtons & Qt.RightButton
 
                     //获取点在View上的屏幕坐标
@@ -5121,7 +5123,7 @@ if (modelmp[main_node_name[1]].is_connected === true)
                         console.log("released")
                    // }
                 }*/
-                onPositionChanged: {
+                onPositionChanged: function(mouse) {
                     if(!mouse_area.containsMouse || !pickNode){
                         return
                     }
