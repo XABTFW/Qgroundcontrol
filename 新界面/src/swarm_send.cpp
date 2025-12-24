@@ -5,23 +5,20 @@ Swarm_send::Swarm_send(QObject *parent)
     : QObject{parent}
 {}
 
-void Swarm_send::set_main_airplane(int sysid, int grp_id, float x,float y,float z) {
+void Swarm_send::set_main_airplane(int sysid, int grp_id, float x,float y,float z) { // 需要给飞控发送自定义消息 设置主机
+  //  qDebug()<<sysid<<x<<y<<z<<__FUNCTION__;
+
     QMap<int , Vehicle*> mp(MultiVehicleManager::instance()->my_vehicles());
     auto it = mp.begin();
     for (;it != mp.end(); it++) {
         if (it.key() == sysid) {
-            // 设置主机
             it.value()->parameterManager()->myswarm_param_send(sysid, "SWARM_SET_LEADER", FactMetaData::valueTypeInt32, 1);
-            // 新增：主机的SWARM_LEADER_ID设为自己的ID
-            it.value()->parameterManager()->myswarm_param_send(sysid, "SWARM_LEADER_ID", FactMetaData::valueTypeInt32, sysid);
         } else {
-            // 将同组的其他飞机设为从机
+             // 将同组的其他飞机设为从机
             auto itt = group_id.begin();
             for (; itt != group_id.end(); itt++) {
                 if (grp_id == itt.value() && sysid != itt.key()) {
                     mp[itt.key()]->parameterManager()->myswarm_param_send(itt.key(), "SWARM_SET_LEADER", FactMetaData::valueTypeInt32, 0);
-                    // 新增：从机的SWARM_LEADER_ID设为主机的ID
-                    mp[itt.key()]->parameterManager()->myswarm_param_send(itt.key(), "SWARM_LEADER_ID", FactMetaData::valueTypeInt32, sysid);
                 }
             }
         }
@@ -36,6 +33,7 @@ void Swarm_send::store_airplane_group(int sysid, int group_id, bool flag) {
     }
 }
 void Swarm_send::caculate_pos(int sysid,float x,float y,float z){
+    qDebug()<<__FUNCTION__<<sysid<<x<<y<<z;
     MultiVehicleManager::instance()->my_vehicles()[sysid]->parameterManager()->myswarm_param_send(sysid, "SWARM_X_OFFSET", FactMetaData::valueTypeFloat, x);
     MultiVehicleManager::instance()->my_vehicles()[sysid]->parameterManager()->myswarm_param_send(sysid, "SWARM_Y_OFFSET", FactMetaData::valueTypeFloat, y);
     MultiVehicleManager::instance()->my_vehicles()[sysid]->parameterManager()->myswarm_param_send(sysid, "SWARM_Z_OFFSET", FactMetaData::valueTypeFloat, z);

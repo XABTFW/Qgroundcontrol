@@ -5793,22 +5793,22 @@ if (modelmp[main_node_name[1]].is_connected === true)
             for (j = 0; j < 2 * i - 1; ++j) {
                 if (index < n) {
                     if(line !== rows) {
-                        screen_pos_to_world_pos(x1 + j * 6, y_0, form_arr[index++])
+                        screen_pos_to_world_pos(x1 + j * 10, y_0, form_arr[index++])
                       //  console.log("l,r",line,rows)
                     } else {// 对最后一行的特殊处理
                         var last_line_num = form_arr.length - index
-                        screen_pos_to_world_pos(x1 + j * 6, y_0, form_arr[index++])
+                        screen_pos_to_world_pos(x1 + j * 10, y_0, form_arr[index++])
 
                       //  console.log("最后一排的数量,两顶点位置",last_line_num,x1,x1 + 2*(i-1)) // 1、找两定点，2、计算定点间的距离，3、按数量平分
                         if (last_line_num !== 1) {// x1是第一顶点，x1 + 2*i-1
-                                var ste = 12 * (i - 1) / (last_line_num - 1)  // 修改为6倍间距
+                                var ste = 20 * (i - 1) / (last_line_num - 1)  // 修改为10倍间距
                                 var step =  Math.floor(ste) // 取最大整数
                              //   console.log(ste,step)
                                 for(var k = 1; k < last_line_num;k++) {
                                     if(index !== form_arr.length - 1)
                                         screen_pos_to_world_pos(x1 + k * step, y_0, form_arr[index++])
                                     else
-                                       screen_pos_to_world_pos(x1 + 12*(i-1), y_0, form_arr[index++])  // 修改为6倍间距
+                                       screen_pos_to_world_pos(x1 + 20*(i-1), y_0, form_arr[index++])  // 修改为10倍间距
                                 }
                                 break
                         }
@@ -5817,7 +5817,7 @@ if (modelmp[main_node_name[1]].is_connected === true)
             }
 
             // 换行
-            y_0 += 6
+            y_0 += 10
         }
 
 
@@ -5858,9 +5858,9 @@ if (modelmp[main_node_name[1]].is_connected === true)
 
         var n = form_arr.length;
 
-            // 计算正方形的边长（使用6的倍数）
-            var side = Math.ceil(Math.sqrt(n)) * 6;
-            if (side < 6) side = 6; // 最小边长为6
+            // 计算正方形的边长（使用10的倍数）
+            var side = Math.ceil(Math.sqrt(n)) * 10;
+            if (side < 10) side = 10; // 最小边长为10
             var index = 0;
 
             // 填充四个顶点
@@ -5868,36 +5868,36 @@ if (modelmp[main_node_name[1]].is_connected === true)
             index += 4;
 
             screen_pos_to_world_pos(x_0,y_0,form_arr[0])
-            screen_pos_to_world_pos(x_0,y_0 + side - 6,form_arr[1])
-            screen_pos_to_world_pos(x_0 + side - 6,y_0,form_arr[2])
-            screen_pos_to_world_pos(x_0 + side - 6,y_0 + side - 6,form_arr[3])
+            screen_pos_to_world_pos(x_0,y_0 + side - 10,form_arr[1])
+            screen_pos_to_world_pos(x_0 + side - 10,y_0,form_arr[2])
+            screen_pos_to_world_pos(x_0 + side - 10,y_0 + side - 10,form_arr[3])
 
             // 填充边
             // 上边（从左到右）
-            for ( i = 1; i < side/6 - 1; ++i) {
+            for ( i = 1; i < side/10 - 1; ++i) {
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0 + i * 6,y_0,form_arr[index])
+                screen_pos_to_world_pos(x_0 + i * 10,y_0,form_arr[index])
                 index++;
             }
 
             // 右边（从上到下）
-            for ( i = 1; i < side/6 - 1; ++i) {
+            for ( i = 1; i < side/10 - 1; ++i) {
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0 + side - 6,y_0 + i * 6,form_arr[index])
+                screen_pos_to_world_pos(x_0 + side - 10,y_0 + i * 10,form_arr[index])
                 index++;
             }
 
             // 下边（从右到左）
-              for (i = side/6 - 2; i >= 1; --i) {
+              for (i = side/10 - 2; i >= 1; --i) {
                   if (index >= n) break;
-                  screen_pos_to_world_pos(x_0 + i * 6,y_0 + side - 6,form_arr[index])
+                  screen_pos_to_world_pos(x_0 + i * 10,y_0 + side - 10,form_arr[index])
                   index++;
               }
 
             // 左边（从下到上）
-            for (i = side/6 - 2; i >= 1; --i) {
+            for (i = side/10 - 2; i >= 1; --i) {
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0,y_0 + i * 6,form_arr[index])
+                screen_pos_to_world_pos(x_0,y_0 + i * 10,form_arr[index])
                 index++;
             }
 
@@ -5992,29 +5992,29 @@ if (modelmp[main_node_name[1]].is_connected === true)
 
             console.log(size, height, x_0,y_0)
             index += 4
-            screen_pos_to_world_pos(x_0 + (height - 1) * 6,y_0 ,form_arr[0])
-            screen_pos_to_world_pos(x_0,y_0 + (height - 1) * 6,form_arr[1])
-            screen_pos_to_world_pos(x_0 + (size - 1) * 6,y_0 + (height - 1) * 6,form_arr[2])
-            screen_pos_to_world_pos(x_0 + (height - 1) * 6,y_0 + (size - 1) * 6,form_arr[3])
+            screen_pos_to_world_pos(x_0 + (height - 1) * 10,y_0 ,form_arr[0])
+            screen_pos_to_world_pos(x_0,y_0 + (height - 1) * 10,form_arr[1])
+            screen_pos_to_world_pos(x_0 + (size - 1) * 10,y_0 + (height - 1) * 10,form_arr[2])
+            screen_pos_to_world_pos(x_0 + (height - 1) * 10,y_0 + (size - 1) * 10,form_arr[3])
 
             // 填充边
             // 上部分（从上到下）
             for ( i = 1; i < height - 1; ++i) {
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0 + (height - 1 - i) * 6,y_0 + i * 6,form_arr[index])  // 左上边
+                screen_pos_to_world_pos(x_0 + (height - 1 - i) * 10,y_0 + i * 10,form_arr[index])  // 左上边
                 index++;
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0 + (height - 1 + i) * 6,y_0 + i * 6,form_arr[index]) // 右上边
+                screen_pos_to_world_pos(x_0 + (height - 1 + i) * 10,y_0 + i * 10,form_arr[index]) // 右上边
                 index++;
             }
 
             // 下部分（从上到下）
             for ( i = 1; i < height - 1; ++i) {
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0 + (height - 1 - i) * 6,y_0 + (size - 1 - i) * 6,form_arr[index]) // 左下边
+                screen_pos_to_world_pos(x_0 + (height - 1 - i) * 10,y_0 + (size - 1 - i) * 10,form_arr[index]) // 左下边
                 index++;
                 if (index >= n) break;
-                screen_pos_to_world_pos(x_0 + (height - 1 + i) * 6,y_0 + (size - 1 - i) * 6,form_arr[index]) // 右下边
+                screen_pos_to_world_pos(x_0 + (height - 1 + i) * 10,y_0 + (size - 1 - i) * 10,form_arr[index]) // 右下边
                 index++;
             }
             console.log("neibu",index,n)
@@ -6207,8 +6207,8 @@ if (modelmp[main_node_name[1]].is_connected === true)
 
 
             var radius = n * 1.5; // 进一步增大半径为飞机数量的1.5倍
-            if(radius < 6) radius = 6  // 最小半径为6
-            if(radius >= 18) radius = 18  // 最大半径为18
+            if(radius < 10) radius = 10  // 最小半径为10
+            if(radius >= 30) radius = 30  // 最大半径为30
             var angleStep = 2 * Math.PI / n; // 每个点之间的角度差
             var index = 0
 
