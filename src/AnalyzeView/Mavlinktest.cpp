@@ -102,70 +102,14 @@ void Mavlinktest::_receiveData(uint8_t device, uint8_t, uint16_t, uint32_t, QByt
 
 void Mavlinktest::_receiveMessage(LinkInterface*, mavlink_message_t message)
 {
-   // qDebug() << "[Mavlinktest] received MAVLink msg id:" << message.msgid;
+    if (message.msgid == MAVLINK_MSG_ID_UAV_INFO) {
+        mavlink_uav_info_t mavlink_uavinfo;
+        mavlink_msg_uav_info_decode(&message, &mavlink_uavinfo);
 
-    // if (message.msgid == MAVLINK_MSG_ID_TEST_MAVLINK) {
-    //     mavlink_test_mavlink_t mavlink_test;
-    //     mavlink_msg_test_mavlink_decode(&message, &mavlink_test);
-
-    //     _test1 = QString::number(mavlink_test.test1); emit test1Changed();
-    //     _test2 = QString::number(mavlink_test.test2); emit test2Changed();
-    //     _test3 = QString::number(mavlink_test.test3); emit test3Changed();
-
-
-    //  qDebug() << "[Mavlinktest] test1:" << _test1 << " test2:" << _test2 << " test3:" << _test3;
-
-    // }
-
-  // if (message.msgid == MAVLINK_MSG_ID_ALTITUDE) {
-  //       mavlink_altitude_t mavlink_altitude;
-  //       mavlink_msg_altitude_decode(&message, &mavlink_altitude);
-
-  //       _test1 = QString::number(mavlink_altitude.time_usec); emit test1Changed();
-  //       _test2 = QString::number(mavlink_altitude.altitude_local); emit test2Changed();
-  //       _test3 = QString::number(mavlink_altitude.altitude_relative); emit test3Changed();
-
-  //   }
-
-// if (message.msgid == MAVLINK_MSG_ID_LEADER_GROUP_ID) {
-//         mavlink_leader_group_id_t mavlink_leaderid;
-//         mavlink_msg_leader_group_id_decode(&message, &mavlink_leaderid);
-
-//         _test1 = QString::number(mavlink_leaderid.group_id); emit test1Changed();
-//         _test2 = QString::number(mavlink_leaderid.leader); emit test2Changed();
-//         _test3 = QString::number(mavlink_leaderid.leader); emit test3Changed();
-
-//     }
-
-
-// if (message.msgid == MAVLINK_MSG_ID_LEADER_INFO) {
-//         mavlink_leader_info_t mavlink_leaderinfo;
-//         mavlink_msg_leader_info_decode(&message, &mavlink_leaderinfo);
-
-//         _test1 = QString::number(mavlink_leaderinfo.lat); emit test1Changed();
-//         _test2 = QString::number(mavlink_leaderinfo.lon); emit test2Changed();
-//         _test3 = QString::number(mavlink_leaderinfo.rel_alt); emit test3Changed();
-
-//     }
-
-if (message.msgid == MAVLINK_MSG_ID_LEADER_INFO) {
-        mavlink_leader_info_t mavlink_leaderinfo;
-        mavlink_msg_leader_info_decode(&message, &mavlink_leaderinfo);
-
-        _test1 = QString::number(mavlink_leaderinfo.mavid); emit test1Changed();
-        _test2 = QString::number(mavlink_leaderinfo.yaw); emit test2Changed();
-        _test3 = QString::number(mavlink_leaderinfo.rel_alt); emit test3Changed();
-
-
-    // auto weakLink = _vehicle->vehicleLinkManager()->primaryLink();
-    // auto sharedLink = weakLink.lock();
-    // mavlink_message_t msg;
-    // mavlink_msg_leader_info_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(),&msg, mavlink_leaderinfo.lat, mavlink_leaderinfo.lon, mavlink_leaderinfo.yaw, mavlink_leaderinfo.yaw_speed, mavlink_leaderinfo.rel_alt, mavlink_leaderinfo.vx, mavlink_leaderinfo.vy, mavlink_leaderinfo.vz,mavlink_leaderinfo.land);
-    // _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
-
- }
-
-
+        _test1 = QString::number(mavlink_uavinfo.mavid); emit test1Changed();
+        _test2 = QString::number(mavlink_uavinfo.yaw); emit test2Changed();
+        _test3 = QString::number(mavlink_uavinfo.rel_alt); emit test3Changed();
+    }
 }
 
 void Mavlinktest::_sendcom(QString test1, QString test2, QString test3)
@@ -186,7 +130,7 @@ void Mavlinktest::_sendcom(QString test1, QString test2, QString test3)
         mavlink_message_t msg;
         //mavlink_msg_test_mavlink_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(), &msg, send_test1, send_test2, send_test3);
 
-        mavlink_msg_leader_info_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(),&msg, 1, 47.89f, 6.66f, 5.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 8.0f);
+        mavlink_msg_uav_info_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(),&msg, 1, 47.89f, 6.66f, 5.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 8.0f);
        // _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
 
     }

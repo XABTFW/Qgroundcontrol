@@ -2,7 +2,7 @@
 //#include "QGCApplication.h"
 //#include "UAS.h"
 #include "MAVLinkInspectorController.h"
-#include "mavlink_msg_leader_info.h"
+#include "mavlink_msg_uav_info.h"
 #include "MultiVehicleManager.h"
 #include <QtCharts/QLineSeries>
 #include<iostream>
@@ -131,7 +131,7 @@ Mavlinktest2::_receiveMessage(LinkInterface*, mavlink_message_t message)
     // }
   //  qDebug()<<message.msgid<<MAVLINK_MSG_ID_TEST_MAVLINK;
 
-    if(message.msgid==MAVLINK_MSG_ID_LEADER_INFO)
+    if(message.msgid==MAVLINK_MSG_ID_UAV_INFO)
     {
      if(!_vehicle)return;
         WeakLinkInterfacePtr weakLink = _vehicle->vehicleLinkManager()->primaryLink();
@@ -143,31 +143,25 @@ Mavlinktest2::_receiveMessage(LinkInterface*, mavlink_message_t message)
                 qCDebug(VehicleLog) << "_handlePing: primary link gone!";
                 return;
             }
-            //            auto protocol = qgcApp()->toolbox()->mavlinkProtocol();
             auto priority_link =sharedLink;
 
 
-            mavlink_leader_info_t mavlink_leaderinfo;
+            mavlink_uav_info_t mavlink_uavinfo;
             mavlink_message_t msg;
-            mavlink_msg_leader_info_decode(&message, &mavlink_leaderinfo); //
-            mavlink_msg_leader_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
+            mavlink_msg_uav_info_decode(&message, &mavlink_uavinfo);
+            mavlink_msg_uav_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
                                          static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
                                         priority_link->mavlinkChannel(),
                                          &msg,
-                                        mavlink_leaderinfo.mavid,
-                                         mavlink_leaderinfo.lat, mavlink_leaderinfo.lon,
-                                         mavlink_leaderinfo.yaw, mavlink_leaderinfo.yaw_speed,
-                                         mavlink_leaderinfo.rel_alt, mavlink_leaderinfo.vx, mavlink_leaderinfo.vy,
-                                         mavlink_leaderinfo.vz, mavlink_leaderinfo.land);
+                                        mavlink_uavinfo.mavid,
+                                         mavlink_uavinfo.lat, mavlink_uavinfo.lon,
+                                         mavlink_uavinfo.yaw, mavlink_uavinfo.yaw_speed,
+                                         mavlink_uavinfo.rel_alt, mavlink_uavinfo.vx, mavlink_uavinfo.vy,
+                                         mavlink_uavinfo.vz, mavlink_uavinfo.land);
 
 
 
             _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
-
-
-
-
-            //std::cout<<"received 12921 and sent"<<mavlink_leaderinfo.lat<<mavlink_leaderinfo.lon<<__FUNCTION__;
         }
 
     }
@@ -277,17 +271,17 @@ void Mavlinktest2::_sendcom2(uint8_t test1,uint8_t test2,uint8_t test3,uint32_t 
         //            auto protocol = qgcApp()->toolbox()->mavlinkProtocol();
         auto priority_link =sharedLink;
 
-            mavlink_leader_info_t mavlink_leaderinfo;
+            mavlink_uav_info_t mavlink_uavinfo;
             mavlink_message_t msg;
-            mavlink_msg_leader_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
+            mavlink_msg_uav_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
                                          static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
                                         priority_link->mavlinkChannel(),
                                          &msg,
-                                         mavlink_leaderinfo.mavid,
-                                         mavlink_leaderinfo.lat, mavlink_leaderinfo.lon,
-                                         mavlink_leaderinfo.yaw, mavlink_leaderinfo.yaw_speed,
-                                         mavlink_leaderinfo.rel_alt, mavlink_leaderinfo.vx, mavlink_leaderinfo.vy,
-                                         mavlink_leaderinfo.vz, mavlink_leaderinfo.land);
+                                         mavlink_uavinfo.mavid,
+                                         mavlink_uavinfo.lat, mavlink_uavinfo.lon,
+                                         mavlink_uavinfo.yaw, mavlink_uavinfo.yaw_speed,
+                                         mavlink_uavinfo.rel_alt, mavlink_uavinfo.vx, mavlink_uavinfo.vy,
+                                         mavlink_uavinfo.vz, mavlink_uavinfo.land);
 
 
             // QTimer::singleShot(100, this, [=]() {
