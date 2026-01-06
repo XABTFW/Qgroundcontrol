@@ -11,15 +11,15 @@
 using namespace std;
 Mavlinktest2::Mavlinktest2()
     : QStringListModel(),
-    _cursor_home_pos{-1},
-    _cursor{0},
-    _vehicle{nullptr}
+      _cursor_home_pos{-1},
+      _cursor{0},
+      _vehicle{nullptr}
 {
-  // auto *manager = qgcApp()->toolbox()->multiVehicleManager();
-   connect(MultiVehicleManager::instance(), &MultiVehicleManager::activeVehicleChanged, this, &Mavlinktest2::_setActiveVehicle);
-   _setActiveVehicle(MultiVehicleManager::instance()->activeVehicle());
-   MAVLinkProtocol* mavlinkProtocol = MAVLinkProtocol::instance();
-   connect(mavlinkProtocol, &MAVLinkProtocol::messageReceived, this, &Mavlinktest2::_receiveMessage);
+   // auto *manager = qgcApp()->toolbox()->multiVehicleManager();
+    connect(MultiVehicleManager::instance(), &MultiVehicleManager::activeVehicleChanged, this, &Mavlinktest2::_setActiveVehicle);
+    _setActiveVehicle(MultiVehicleManager::instance()->activeVehicle());
+    MAVLinkProtocol* mavlinkProtocol = MAVLinkProtocol::instance();
+    connect(mavlinkProtocol, &MAVLinkProtocol::messageReceived, this, &Mavlinktest2::_receiveMessage);
 }
 
 Mavlinktest2::~Mavlinktest2()
@@ -87,7 +87,7 @@ Mavlinktest2::_receiveData(uint8_t device, uint8_t, uint16_t, uint32_t, QByteArr
     //setData(idx,  QString("%1 ttyS6 -> * [%2]").arg(QTime::currentTime().toString("HH:mm:ss.zzz")).arg(12));
 
 
-    // Append incoming data and parse for ANSI codes
+            // Append incoming data and parse for ANSI codes
     _incoming_buffer.append(data);
     while(!_incoming_buffer.isEmpty())
     {
@@ -129,11 +129,11 @@ Mavlinktest2::_receiveMessage(LinkInterface*, mavlink_message_t message)
     // if( message.msgid == MAVLINK_MSG_ID_ALTITUDE) {
     //     qDebug()<<"message.msgid"<<MAVLINK_MSG_ID_ALTITUDE<<__LINE__;
     // }
-  //  qDebug()<<message.msgid<<MAVLINK_MSG_ID_TEST_MAVLINK;
+    //  qDebug()<<message.msgid<<MAVLINK_MSG_ID_TEST_MAVLINK;
 
     if(message.msgid==MAVLINK_MSG_ID_UAV_INFO)
     {
-     if(!_vehicle)return;
+        if(!_vehicle)return;
         WeakLinkInterfacePtr weakLink = _vehicle->vehicleLinkManager()->primaryLink();
 
         if (!weakLink.expired()) {
@@ -150,14 +150,16 @@ Mavlinktest2::_receiveMessage(LinkInterface*, mavlink_message_t message)
             mavlink_message_t msg;
             mavlink_msg_uav_info_decode(&message, &mavlink_uavinfo);
             mavlink_msg_uav_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
-                                         static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
-                                        priority_link->mavlinkChannel(),
-                                         &msg,
-                                        mavlink_uavinfo.mavid,
-                                         mavlink_uavinfo.lat, mavlink_uavinfo.lon,
-                                         mavlink_uavinfo.yaw, mavlink_uavinfo.yaw_speed,
-                                         mavlink_uavinfo.rel_alt, mavlink_uavinfo.vx, mavlink_uavinfo.vy,
-                                         mavlink_uavinfo.vz, mavlink_uavinfo.land);
+                                           static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
+                                           priority_link->mavlinkChannel(),
+                                           &msg,
+                                           mavlink_uavinfo.mavid,
+                                           mavlink_uavinfo.group_id,
+                                           mavlink_uavinfo.is_leader,
+                                           mavlink_uavinfo.lat, mavlink_uavinfo.lon,
+                                           mavlink_uavinfo.yaw, mavlink_uavinfo.yaw_speed,
+                                           mavlink_uavinfo.rel_alt, mavlink_uavinfo.vx, mavlink_uavinfo.vy,
+                                           mavlink_uavinfo.vz, mavlink_uavinfo.land);
 
 
 
@@ -179,13 +181,13 @@ void Mavlinktest2::set_main_airplane(int sysid, float x,float y,float z) { // �
     airplane_pos.clear();
     airplane_pos[sysid] = vec_;
 
-  //  _sendcom2(sysid);
+            //  _sendcom2(sysid);
 }
 
 void Mavlinktest2::caculate_pos(int sysid,float x,float y,float z){
 
     _vehicle = MultiVehicleManager::instance()->activeVehicle();
-   // qDebug()<<x<<y<<z<<_vehicle->parameterManager()<<sysid;
+    // qDebug()<<x<<y<<z<<_vehicle->parameterManager()<<sysid;
 
     if(_vehicle->parameterManager() && sysid == _vehicle->id()) {
         _vehicle->parameterManager()->myswarm_param_send(sysid, "SWARM_X_OFFSET", FactMetaData::valueTypeFloat, x);
@@ -214,11 +216,11 @@ void Mavlinktest2::_sendcom(uint8_t test1,uint8_t test2,uint8_t test3,uint32_t p
         //            auto protocol = qgcApp()->toolbox()->mavlinkProtocol();
         auto priority_link =sharedLink;
 
-      //  uint8_t send_test1=test1.toUInt();  不用强制转换了
-      //  int16_t send_test2=test2.toShort();
-     //   float send_test3=test3.toFloat();
+                //  uint8_t send_test1=test1.toUInt();  不用强制转换了
+                //  int16_t send_test2=test2.toShort();
+        //   float send_test3=test3.toFloat();
 
-         mavlink_message_t msg;
+        mavlink_message_t msg;
         // mavlink_msg_swarm_start_flag_pack_chan(_vehicle->id(), //将test_mavlink 也改掉试试
         //                                    1,
         //                                    priority_link->mavlinkChannel(),
@@ -227,25 +229,25 @@ void Mavlinktest2::_sendcom(uint8_t test1,uint8_t test2,uint8_t test3,uint32_t p
         //                                    test2,
         //                                    test3,pause,conti);
 
-//    mavlink_msg_swarm_start_flag_pack_chan(55, //将test_mavlink 也改掉试试
-//                                            55,
-//                                            priority_link->mavlinkChannel(),
-//                                            &msg,
-//                                            test1,
-//                                            test2,
-//                                            test3,pause,conti);
+        //    mavlink_msg_swarm_start_flag_pack_chan(55, //将test_mavlink 也改掉试试
+        //                                            55,
+        //                                            priority_link->mavlinkChannel(),
+        //                                            &msg,
+        //                                            test1,
+        //                                            test2,
+        //                                            test3,pause,conti);
 
 
         mavlink_msg_swarm_start_flag_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
-                                         static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
-                                           priority_link->mavlinkChannel(),
-                                           &msg,
-                                           test1,
-                                           test2,
-                                           test3,pause,conti);
+                                               static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
+                                               priority_link->mavlinkChannel(),
+                                               &msg,
+                                               test1,
+                                               test2,
+                                               test3,pause,conti);
 
 
-       _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
+        _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
         qDebug()<<__FUNCTION__<<test1<<test2<<test3<<pause<<conti;
     }
 }
@@ -271,27 +273,29 @@ void Mavlinktest2::_sendcom2(uint8_t test1,uint8_t test2,uint8_t test3,uint32_t 
         //            auto protocol = qgcApp()->toolbox()->mavlinkProtocol();
         auto priority_link =sharedLink;
 
-            mavlink_uav_info_t mavlink_uavinfo;
-            mavlink_message_t msg;
-            mavlink_msg_uav_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
-                                         static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
-                                        priority_link->mavlinkChannel(),
-                                         &msg,
-                                         mavlink_uavinfo.mavid,
-                                         mavlink_uavinfo.lat, mavlink_uavinfo.lon,
-                                         mavlink_uavinfo.yaw, mavlink_uavinfo.yaw_speed,
-                                         mavlink_uavinfo.rel_alt, mavlink_uavinfo.vx, mavlink_uavinfo.vy,
-                                         mavlink_uavinfo.vz, mavlink_uavinfo.land);
+        mavlink_uav_info_t mavlink_uavinfo;
+        mavlink_message_t msg;
+        mavlink_msg_uav_info_pack_chan(static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
+                                       static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
+                                       priority_link->mavlinkChannel(),
+                                       &msg,
+                                       mavlink_uavinfo.mavid,
+                                       mavlink_uavinfo.group_id,
+                                       mavlink_uavinfo.is_leader,
+                                       mavlink_uavinfo.lat, mavlink_uavinfo.lon,
+                                       mavlink_uavinfo.yaw, mavlink_uavinfo.yaw_speed,
+                                       mavlink_uavinfo.rel_alt, mavlink_uavinfo.vx, mavlink_uavinfo.vy,
+                                       mavlink_uavinfo.vz, mavlink_uavinfo.land);
 
 
-            // QTimer::singleShot(100, this, [=]() {
-            //     _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
-            // });
+                // QTimer::singleShot(100, this, [=]() {
+                //     _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
+                // });
 
 
 
 
-     _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
+        _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
 
     }
 }
@@ -316,35 +320,35 @@ Mavlinktest2::_sendSerialData(QByteArray data, bool close)
         }
 
 
-        // Send maximum sized chunks until the complete buffer is transmitted
-        //        while(data.size())
-        //        {
-        //            QByteArray chunk{data.left(MAVLINK_MSG_SERIAL_CONTROL_FIELD_DATA_LEN)};
-        //            uint8_t flags = SERIAL_CONTROL_FLAG_EXCLUSIVE |  SERIAL_CONTROL_FLAG_RESPOND | SERIAL_CONTROL_FLAG_MULTI;
-        //            if (close)
-        //            {
-        //                flags = 0;
-        //            }
-        //            auto protocol = qgcApp()->toolbox()->mavlinkProtocol();
-        //            auto priority_link =sharedLink;
-        //            mavlink_message_t msg;
+                // Send maximum sized chunks until the complete buffer is transmitted
+                //        while(data.size())
+                //        {
+                //            QByteArray chunk{data.left(MAVLINK_MSG_SERIAL_CONTROL_FIELD_DATA_LEN)};
+                //            uint8_t flags = SERIAL_CONTROL_FLAG_EXCLUSIVE |  SERIAL_CONTROL_FLAG_RESPOND | SERIAL_CONTROL_FLAG_MULTI;
+                //            if (close)
+                //            {
+                //                flags = 0;
+                //            }
+                //            auto protocol = qgcApp()->toolbox()->mavlinkProtocol();
+                //            auto priority_link =sharedLink;
+                //            mavlink_message_t msg;
 
 
 
-        //            mavlink_msg_serial_control_pack_chan(
-        //                protocol->getSystemId(),
-        //                protocol->getComponentId(),
-        //                priority_link->mavlinkChannel(),
-        //                &msg,
-        //                SERIAL_CONTROL_DEV_SHELL,
-        //                flags,
-        //                0,
-        //                0,
-        //                chunk.size(),
-        //                reinterpret_cast<uint8_t*>(chunk.data()));
-        //            _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
-        //            data.remove(0, chunk.size());
-        //        }
+                //            mavlink_msg_serial_control_pack_chan(
+                //                protocol->getSystemId(),
+                //                protocol->getComponentId(),
+                //                priority_link->mavlinkChannel(),
+                //                &msg,
+                //                SERIAL_CONTROL_DEV_SHELL,
+                //                flags,
+                //                0,
+                //                0,
+                //                chunk.size(),
+                //                reinterpret_cast<uint8_t*>(chunk.data()));
+                //            _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
+                //            data.remove(0, chunk.size());
+                //        }
     }
 
 
@@ -366,52 +370,52 @@ Mavlinktest2::_processANSItext(QByteArray &line)
                 // Parse ANSI code
                 switch(line.at(i+2))
                 {
-                default:
-                    continue;
-                case 'H':
-                    if (_cursor_home_pos == -1)
-                    {
-                        // Assign new home position if home is unset
-                        _cursor_home_pos = _cursor;
-                    }
-                    else
-                    {
-                        // Rewind write cursor position to home
-                        _cursor = _cursor_home_pos;
-                    }
-                    break;
-                case 'K':
-                    // Erase the current line to the end
-                    if (_cursor < rowCount())
-                    {
-                        setData(index(_cursor), "");
-                    }
-                    break;
-                case '2':
-                    // Check for sufficient buffer size
-                    if ( i >= line.size() - 3)
-                    {
-                        return false;
-                    }
-
-                    if (line.at(i+3) == 'J' && _cursor_home_pos != -1)
-                    {
-                        // Erase everything and rewind to home
-                        bool blocked = blockSignals(true);
-                        for (int j = _cursor_home_pos; j < rowCount(); j++)
+                    default:
+                        continue;
+                    case 'H':
+                        if (_cursor_home_pos == -1)
                         {
-                            setData(index(j), "");
+                            // Assign new home position if home is unset
+                            _cursor_home_pos = _cursor;
                         }
-                        blockSignals(blocked);
-                        QVector<int> roles;
-                        roles.reserve(2);
-                        roles.append(Qt::DisplayRole);
-                        roles.append(Qt::EditRole);
-                        emit dataChanged(index(_cursor), index(rowCount()), roles);
-                    }
-                    // Even if we didn't understand this ANSI code, remove the 4th char
-                    line.remove(i+3,1);
-                    break;
+                        else
+                        {
+                            // Rewind write cursor position to home
+                            _cursor = _cursor_home_pos;
+                        }
+                        break;
+                    case 'K':
+                        // Erase the current line to the end
+                        if (_cursor < rowCount())
+                        {
+                            setData(index(_cursor), "");
+                        }
+                        break;
+                    case '2':
+                        // Check for sufficient buffer size
+                        if ( i >= line.size() - 3)
+                        {
+                            return false;
+                        }
+
+                        if (line.at(i+3) == 'J' && _cursor_home_pos != -1)
+                        {
+                            // Erase everything and rewind to home
+                            bool blocked = blockSignals(true);
+                            for (int j = _cursor_home_pos; j < rowCount(); j++)
+                            {
+                                setData(index(j), "");
+                            }
+                            blockSignals(blocked);
+                            QVector<int> roles;
+                            roles.reserve(2);
+                            roles.append(Qt::DisplayRole);
+                            roles.append(Qt::EditRole);
+                            emit dataChanged(index(_cursor), index(rowCount()), roles);
+                        }
+                        // Even if we didn't understand this ANSI code, remove the 4th char
+                        line.remove(i+3,1);
+                        break;
                 }
                 // Remove the parsed ANSI code and decrement the bufferpos
                 line.remove(i, 3);

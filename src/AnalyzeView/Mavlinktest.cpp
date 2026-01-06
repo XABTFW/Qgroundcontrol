@@ -130,7 +130,19 @@ void Mavlinktest::_sendcom(QString test1, QString test2, QString test3)
         mavlink_message_t msg;
         //mavlink_msg_test_mavlink_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(), &msg, send_test1, send_test2, send_test3);
 
-        mavlink_msg_uav_info_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(),&msg, 1, 47.89f, 6.66f, 5.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 8.0f);
+        mavlink_msg_uav_info_pack_chan(_vehicle->id(), 1, sharedLink->mavlinkChannel(), &msg,
+            1,          // mavid
+            0,          // group_id
+            0,          // is_leader
+            47.89f,     // lat
+            6.66f,      // lon
+            5.0f,       // yaw
+            5.0f,       // yaw_speed
+            6.0f,       // rel_alt
+            6.0f,       // vx
+            7.0f,       // vy
+            7.0f,       // vz
+            0);         // land
        // _vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), msg);
 
     }
