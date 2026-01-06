@@ -1,0 +1,5 @@
+地面站需要在终端配置代理才能构建成功
+export http_proxy=http://127.0.0.1:7897
+export https_proxy=http://127.0.0.1:7897
+并且下载缺失的子模块
+git submodule update --init --recursive
