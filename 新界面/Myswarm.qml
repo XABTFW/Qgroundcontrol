@@ -34,9 +34,9 @@ Window {
     id: root
     title: "我的编队"
     width: 1600
-    height: 1050
+    height: 900
     minimumWidth: 1200
-    minimumHeight: 850
+    minimumHeight: 700
     visible: false
     color: "#1e1e2e"  // 深色主题背景
 
@@ -54,210 +54,32 @@ Window {
     property color modelColor3: "#EA8C89"  // 模型颜色
     property color modelColor4: "#3be292"  // 模型颜色
 
-    // 各组连接的模型数量
-    property int group1Count: 0
-    property int group2Count: 0
-    property int group3Count: 0
-    property int group4Count: 0
-
-    // 更新各组数量
-    function updateGroupCounts() {
-        var c1 = 0, c2 = 0, c3 = 0, c4 = 0;
-        for (var i = 0; i < plan_arr.length; i++) {
-            if (plan_arr[i].is_connected) {
-                if (plan_arr[i].group_id === 1) c1++;
-                else if (plan_arr[i].group_id === 2) c2++;
-                else if (plan_arr[i].group_id === 3) c3++;
-                else if (plan_arr[i].group_id === 4) c4++;
-            }
-        }
-        group1Count = c1;
-        group2Count = c2;
-        group3Count = c3;
-        group4Count = c4;
-    }
-
     // 您的属性和信号保持不变
     signal message()
     signal update_other_airplane(int param, int isset, int grp)
-
+  //  property var _activeVehicle: QGroundControl.multiVehicleManager
+  /*  property var _sysid_list: []
+    property var idpos_map: ({})
+    property var hasset_map: ({})
+    property bool ifpick: false
+    property int myIntx: 0
+    property int myInty: 0
+    property int lastIntx: 0
+    property int lastInty: 0
+    property bool if_release: false
+    property var main_node_name: []
+    property var modelmp: ({})
+    property var form_arr: []
+    property int separate_main: 1
+    property int group_num: 1
+    property var plan_id: []
+    property var plan_arr: []
+    property var select_merge: []
+    property var arr_to_change_pos: []
+    property var grp_pos_mp: ({})*/
 
     Mavlinktest2 { id: test_mavlink }
     Swarmsend { id: swarm_send }
-
-    // 集群操作确认弹窗
-    SwarmOperationPopup {
-        id: swarmOpPopup
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.rightMargin: 20
-        anchors.topMargin: 100
-        z: 1000  // 确保在最上层
-    }
-
-    // 连接Mavlinktest2的操作确认信号到弹窗
-    Connections {
-        target: test_mavlink
-        function onSwarmOperationAckReceived(sysId, opType, result, oldValue, newValue, message) {
-            console.log("[Myswarm] 收到操作确认: " + message);
-            swarmOpPopup.showPopup(sysId, opType, result, oldValue, newValue, message);
-        }
-    }
-
-    // 筹划参数设置弹窗 - 点击筹划时弹出，让用户设置间距和高度
-    property var pendingPlanAction: null  // 存储待执行的筹划操作
-
-    Popup {
-        id: planParamPopup
-        anchors.centerIn: Overlay.overlay
-        width: 400
-        height: 280
-        modal: true
-        closePolicy: Popup.NoAutoClose  // 必须点击按钮才能关闭
-        background: Rectangle {
-            color: "#3b4252"
-            radius: 12
-            border.color: primaryColor
-            border.width: 2
-        }
-        contentItem: ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 20
-            spacing: 15
-
-            Label {
-                text: "⚙️ 筹划参数设置"
-                font.bold: true
-                font.pixelSize: 18
-                color: primaryColor
-                Layout.alignment: Qt.AlignHCenter
-            }
-
-            Label {
-                text: "请设置飞机之间的间距和高度差"
-                font.pixelSize: 14
-                color: textColor
-                Layout.alignment: Qt.AlignHCenter
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 100
-                color: "#2e3440"
-                radius: 8
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 15
-
-                    RowLayout {
-                        spacing: 10
-                        Layout.alignment: Qt.AlignHCenter
-
-                        Label {
-                            text: "飞机间距:"
-                            font.pixelSize: 14
-                            color: "#88c0d0"
-                        }
-
-                        TextField {
-                            id: planDistanceInput
-                            text: input5.text
-                            width: 60
-                            height: 30
-                            validator: IntValidator { bottom: 1; top: 99 }
-                            horizontalAlignment: Text.AlignHCenter
-                            background: Rectangle {
-                                color: "#4c566a"
-                                radius: 4
-                            }
-                            color: "white"
-                        }
-
-                        Label {
-                            text: "米"
-                            font.pixelSize: 14
-                            color: textColor
-                        }
-                    }
-
-                    RowLayout {
-                        spacing: 10
-                        Layout.alignment: Qt.AlignHCenter
-
-                        Label {
-                            text: "默认高度:"
-                            font.pixelSize: 14
-                            color: "#a3be8c"
-                        }
-
-                        TextField {
-                            id: planHeightInput
-                            text: input6.text
-                            width: 60
-                            height: 30
-                            validator: IntValidator { bottom: -99; top: 99 }
-                            horizontalAlignment: Text.AlignHCenter
-                            background: Rectangle {
-                                color: "#4c566a"
-                                radius: 4
-                            }
-                            color: "white"
-                        }
-
-                        Label {
-                            text: "米"
-                            font.pixelSize: 14
-                            color: textColor
-                        }
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: 20
-
-                CustomButton {
-                    text: "取消"
-                    color: dangerColor
-                    onClicked: {
-                        pendingPlanAction = null;
-                        planParamPopup.close();
-                    }
-                }
-
-                CustomButton {
-                    text: "确认筹划"
-                    color: secondaryColor
-                    onClicked: {
-                        // 更新间距和高度参数
-                        input5.text = planDistanceInput.text;
-                        input6.text = planHeightInput.text;
-
-                        // 执行筹划操作
-                        if (pendingPlanAction) {
-                            pendingPlanAction();
-                            pendingPlanAction = null;
-                        }
-                        planParamPopup.close();
-
-                        // 显示确认提示
-                        swarmOpPopup.showPopup(0, 3, 0, 0, 0,
-                            "筹划完成，间距: " + input5.text + "米，高度: " + input6.text + "米");
-                    }
-                }
-            }
-        }
-    }
-
-    // 显示筹划参数设置弹窗
-    function showPlanParamPopup(action) {
-        planDistanceInput.text = input5.text;
-        planHeightInput.text = input6.text;
-        pendingPlanAction = action;
-        planParamPopup.open();
-    }
 
     // 主布局
     Rectangle {
@@ -295,14 +117,8 @@ Window {
                         onClicked: {
                             if (Number(input_plan.text) > 50) {
                                 group_popu4.open()
-                            } else if (Number(input_plan.text) <= 0) {
-                                // 筹划数量为0时不弹窗
-                                return;
                             } else {
-                                // 弹出参数设置弹窗，确认后执行筹划
-                                showPlanParamPopup(function() {
-                                    plan_to_visible();
-                                });
+                                plan_to_visible()
                             }
                         }
                     }
@@ -331,7 +147,7 @@ Window {
 
 
                     Label {
-                        text: "第一组 " + group1Count + " 架"
+                        text: "第一组 0 架"
                         color: root.textColor
                         font.pixelSize: 14
                     }
@@ -345,7 +161,7 @@ Window {
 
 
                     Label {
-                        text: "第二组 " + group2Count + " 架"
+                        text: "第二组 0 架"
                         color: root.textColor
                         font.pixelSize: 14
                     }
@@ -359,7 +175,7 @@ Window {
 
 
                     Label {
-                        text: "第三组 " + group3Count + " 架"
+                        text: "第三组 0 架"
                         color: root.textColor
                         font.pixelSize: 14
                     }
@@ -375,7 +191,7 @@ Window {
 
                     Label {
                         id:modellable4
-                        text: "第四组 " + group4Count + " 架"
+                        text: "第四组 0 架"
                         color: root.textColor
                         font.pixelSize: 14
                        // visible: false
@@ -432,19 +248,19 @@ Window {
                 }*/
 
                 // // 飞行管理
-                RowLayout {
-                    spacing: 10
-                    CustomButton {
-                        text: "暂停";
-                        color: root.accentColor;
-                        onClicked: test_mavlink._sendcom(0,0,0,separate_main,0)
-                    }
-                    CustomButton {
-                        text: "继续";
-                        color: secondaryColor;
-                        onClicked: test_mavlink._sendcom(0,0,0,0,separate_main)
-                    }
-                }
+                // RowLayout {
+                //     spacing: 10
+                //     CustomButton {
+                //         text: "暂停";
+                //         color: root.accentColor;
+                //         onClicked: test_mavlink._sendcom2(0,0,0,separate_main,0)
+                //     }
+                //     CustomButton {
+                //         text: "继续";
+                //         color: secondaryColor;
+                //         onClicked: test_mavlink._sendcom(0,0,0,0,separate_main)
+                //     }
+                // }
 
 
             }
@@ -455,13 +271,12 @@ Window {
             id: viewContainer
             anchors {
                 top: topBar.bottom
-                bottom: droneHeightArea.top
+                bottom: bottomBar.top
                 // left: parent.left
                 // right: controlPanel.left
                 left: controlPanel.right
                 right: parent.right
                 margins: 12
-                bottomMargin: 6
             }
 
                 // 超出部分裁剪（可选）
@@ -643,7 +458,7 @@ Window {
                        Canvas{
                            id:canv
                            anchors.fill: parent
-                           visible: false
+                           visible: true
                            onPaint: { //    |的上半部分
                                var vtx = getContext("2d")
                                vtx.strokeStyle = "black"
@@ -664,7 +479,7 @@ Window {
                        Canvas{  //    |的下半部分
                            id:canv2
                            anchors.fill: parent
-                           visible: false
+                           visible: true
                            onPaint: {
                                var vtx = getContext("2d")
                                vtx.strokeStyle = "black"
@@ -685,7 +500,7 @@ Window {
                        Canvas{
                            id:canv3  //    ——的左半部分
                            anchors.fill: parent
-                           visible: false
+                           visible: true
                            onPaint: {
                                var vtx = getContext("2d")
                                vtx.strokeStyle = "black"
@@ -705,7 +520,7 @@ Window {
                        Canvas{
                            id:canv4  //    ——的右半部分
                            anchors.fill: parent
-                           visible: false
+                           visible: true
                            onPaint: {
                                var vtx = getContext("2d")
                                vtx.strokeStyle = "black"
@@ -793,7 +608,7 @@ Window {
                           // property color darkcolor: Qt.darker("#646566",1.2)
                            materials: DefaultMaterial {
                                opacity: sphere_node.select_color
-                               diffuseColor: sphere_node.is_connected ? (sphere_node.is_main ? "red" : (sphere_node.group_id === 1 ? modelColor1 : (sphere_node.group_id === 2 ? modelColor2 : (sphere_node.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node.is_connected ? (sphere_node.is_main ? "red" : "cyan") : "#646566"
 
                            }
                           // materials: edgeColor:Qt.rgba(1.0,0.0,0.0,1.0)
@@ -879,7 +694,7 @@ Window {
                            materials: DefaultMaterial {
                            //    diffuseColor:"cyan"
                                opacity: sphere_node2.select_color
-                               diffuseColor: sphere_node2.is_connected ? (sphere_node2.is_main ? "red" : (sphere_node2.group_id === 1 ? modelColor1 : (sphere_node2.group_id === 2 ? modelColor2 : (sphere_node2.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node2.is_connected ? (sphere_node2.is_main ? "red" : "cyan") : "#646566"
                            }
                            Component.onCompleted: {
                                // mymove(2,1,sphere_node2)
@@ -959,7 +774,7 @@ Window {
                            materials: DefaultMaterial {
                                opacity: sphere_node3.select_color
                               // diffuseColor:sphere_node3.is_main ? "red" : "cyan"
-                               diffuseColor: sphere_node3.is_connected ? (sphere_node3.is_main ? "red" : (sphere_node3.group_id === 1 ? modelColor1 : (sphere_node3.group_id === 2 ? modelColor2 : (sphere_node3.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node3.is_connected ? (sphere_node3.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1036,7 +851,7 @@ Window {
                            materials: DefaultMaterial {
                                opacity: sphere_node4.select_color
                               // diffuseColor: sphere_node4.is_main ? "red" : "cyan"
-                               diffuseColor: sphere_node4.is_connected ? (sphere_node4.is_main ? "red" : (sphere_node4.group_id === 1 ? modelColor1 : (sphere_node4.group_id === 2 ? modelColor2 : (sphere_node4.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node4.is_connected ? (sphere_node4.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1109,7 +924,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node5.select_color
-                               diffuseColor: sphere_node5.is_connected ? (sphere_node5.is_main ? "red" : (sphere_node5.group_id === 1 ? modelColor1 : (sphere_node5.group_id === 2 ? modelColor2 : (sphere_node5.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node5.is_connected ? (sphere_node5.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1181,7 +996,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node6.select_color
-                               diffuseColor: sphere_node6.is_connected ? (sphere_node6.is_main ? "red" : (sphere_node6.group_id === 1 ? modelColor1 : (sphere_node6.group_id === 2 ? modelColor2 : (sphere_node6.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node6.is_connected ? (sphere_node6.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1253,7 +1068,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node7.select_color
-                               diffuseColor: sphere_node7.is_connected ? (sphere_node7.is_main ? "red" : (sphere_node7.group_id === 1 ? modelColor1 : (sphere_node7.group_id === 2 ? modelColor2 : (sphere_node7.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node7.is_connected ? (sphere_node7.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1325,7 +1140,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node8.select_color
-                               diffuseColor: sphere_node8.is_connected ? (sphere_node8.is_main ? "red" : (sphere_node8.group_id === 1 ? modelColor1 : (sphere_node8.group_id === 2 ? modelColor2 : (sphere_node8.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node8.is_connected ? (sphere_node8.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1396,7 +1211,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node9.select_color
-                               diffuseColor: sphere_node9.is_connected ? (sphere_node9.is_main ? "red" : (sphere_node9.group_id === 1 ? modelColor1 : (sphere_node9.group_id === 2 ? modelColor2 : (sphere_node9.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node9.is_connected ? (sphere_node9.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1467,7 +1282,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node10.select_color
-                               diffuseColor: sphere_node10.is_connected ? (sphere_node10.is_main ? "red" : (sphere_node10.group_id === 1 ? modelColor1 : (sphere_node10.group_id === 2 ? modelColor2 : (sphere_node10.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node10.is_connected ? (sphere_node10.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1537,7 +1352,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node11.select_color
-                               diffuseColor: sphere_node11.is_connected ? (sphere_node11.is_main ? "red" : (sphere_node11.group_id === 1 ? modelColor1 : (sphere_node11.group_id === 2 ? modelColor2 : (sphere_node11.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node11.is_connected ? (sphere_node11.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1609,7 +1424,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node12.select_color
-                               diffuseColor: sphere_node12.is_connected ? (sphere_node12.is_main ? "red" : (sphere_node12.group_id === 1 ? modelColor1 : (sphere_node12.group_id === 2 ? modelColor2 : (sphere_node12.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node12.is_connected ? (sphere_node12.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1682,7 +1497,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node13.select_color
-                               diffuseColor: sphere_node13.is_connected ? (sphere_node13.is_main ? "red" : (sphere_node13.group_id === 1 ? modelColor1 : (sphere_node13.group_id === 2 ? modelColor2 : (sphere_node13.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node13.is_connected ? (sphere_node13.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1754,7 +1569,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node14.select_color
-                               diffuseColor: sphere_node14.is_connected ? (sphere_node14.is_main ? "red" : (sphere_node14.group_id === 1 ? modelColor1 : (sphere_node14.group_id === 2 ? modelColor2 : (sphere_node14.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node14.is_connected ? (sphere_node14.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1826,7 +1641,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node15.select_color
-                               diffuseColor: sphere_node15.is_connected ? (sphere_node15.is_main ? "red" : (sphere_node15.group_id === 1 ? modelColor1 : (sphere_node15.group_id === 2 ? modelColor2 : (sphere_node15.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node15.is_connected ? (sphere_node15.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1898,7 +1713,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node16.select_color
-                               diffuseColor: sphere_node16.is_connected ? (sphere_node16.is_main ? "red" : (sphere_node16.group_id === 1 ? modelColor1 : (sphere_node16.group_id === 2 ? modelColor2 : (sphere_node16.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node16.is_connected ? (sphere_node16.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -1970,7 +1785,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node17.select_color
-                               diffuseColor: sphere_node17.is_connected ? (sphere_node17.is_main ? "red" : (sphere_node17.group_id === 1 ? modelColor1 : (sphere_node17.group_id === 2 ? modelColor2 : (sphere_node17.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node17.is_connected ? (sphere_node17.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2042,7 +1857,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node18.select_color
-                               diffuseColor: sphere_node18.is_connected ? (sphere_node18.is_main ? "red" : (sphere_node18.group_id === 1 ? modelColor1 : (sphere_node18.group_id === 2 ? modelColor2 : (sphere_node18.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node18.is_connected ? (sphere_node18.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2114,7 +1929,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node19.select_color
-                               diffuseColor: sphere_node19.is_connected ? (sphere_node19.is_main ? "red" : (sphere_node19.group_id === 1 ? modelColor1 : (sphere_node19.group_id === 2 ? modelColor2 : (sphere_node19.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node19.is_connected ? (sphere_node19.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2186,7 +2001,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node20.select_color
-                               diffuseColor: sphere_node20.is_connected ? (sphere_node20.is_main ? "red" : (sphere_node20.group_id === 1 ? modelColor1 : (sphere_node20.group_id === 2 ? modelColor2 : (sphere_node20.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node20.is_connected ? (sphere_node20.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2257,7 +2072,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node21.select_color
-                               diffuseColor: sphere_node21.is_connected ? (sphere_node21.is_main ? "red" : (sphere_node21.group_id === 1 ? modelColor1 : (sphere_node21.group_id === 2 ? modelColor2 : (sphere_node21.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node21.is_connected ? (sphere_node21.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2328,7 +2143,7 @@ Window {
                            property bool is_connected: false
                            property real select_color: 0.6
                            materials: DefaultMaterial {
-                               diffuseColor: sphere_node22.is_connected ? (sphere_node22.is_main ? "red" : (sphere_node22.group_id === 1 ? modelColor1 : (sphere_node22.group_id === 2 ? modelColor2 : (sphere_node22.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node22.is_connected ? (sphere_node22.is_main ? "red" : "cyan") : "#646566"
                                opacity: sphere_node22.select_color
                            }
 
@@ -2400,7 +2215,7 @@ Window {
                            property bool is_connected: false
                            property real select_color: 0.6
                            materials: DefaultMaterial {
-                               diffuseColor: sphere_node23.is_connected ? (sphere_node23.is_main ? "red" : (sphere_node23.group_id === 1 ? modelColor1 : (sphere_node23.group_id === 2 ? modelColor2 : (sphere_node23.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node23.is_connected ? (sphere_node23.is_main ? "red" : "cyan") : "#646566"
                                opacity: sphere_node23.select_color
                            }
 
@@ -2472,7 +2287,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node24.select_color
-                               diffuseColor: sphere_node24.is_connected ? (sphere_node24.is_main ? "red" : (sphere_node24.group_id === 1 ? modelColor1 : (sphere_node24.group_id === 2 ? modelColor2 : (sphere_node24.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node24.is_connected ? (sphere_node24.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2544,7 +2359,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node25.select_color
-                               diffuseColor: sphere_node25.is_connected ? (sphere_node25.is_main ? "red" : (sphere_node25.group_id === 1 ? modelColor1 : (sphere_node25.group_id === 2 ? modelColor2 : (sphere_node25.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node25.is_connected ? (sphere_node25.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2615,7 +2430,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node26.select_color
-                               diffuseColor: sphere_node26.is_connected ? (sphere_node26.is_main ? "red" : (sphere_node26.group_id === 1 ? modelColor1 : (sphere_node26.group_id === 2 ? modelColor2 : (sphere_node26.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node26.is_connected ? (sphere_node26.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2686,7 +2501,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node27.select_color
-                               diffuseColor: sphere_node27.is_connected ? (sphere_node27.is_main ? "red" : (sphere_node27.group_id === 1 ? modelColor1 : (sphere_node27.group_id === 2 ? modelColor2 : (sphere_node27.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node27.is_connected ? (sphere_node27.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2757,7 +2572,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node28.select_color
-                               diffuseColor: sphere_node28.is_connected ? (sphere_node28.is_main ? "red" : (sphere_node28.group_id === 1 ? modelColor1 : (sphere_node28.group_id === 2 ? modelColor2 : (sphere_node28.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node28.is_connected ? (sphere_node28.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2828,7 +2643,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node29.select_color
-                               diffuseColor: sphere_node29.is_connected ? (sphere_node29.is_main ? "red" : (sphere_node29.group_id === 1 ? modelColor1 : (sphere_node29.group_id === 2 ? modelColor2 : (sphere_node29.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node29.is_connected ? (sphere_node29.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2899,7 +2714,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node30.select_color
-                               diffuseColor: sphere_node30.is_connected ? (sphere_node30.is_main ? "red" : (sphere_node30.group_id === 1 ? modelColor1 : (sphere_node30.group_id === 2 ? modelColor2 : (sphere_node30.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node30.is_connected ? (sphere_node30.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -2970,7 +2785,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node31.select_color
-                               diffuseColor: sphere_node31.is_connected ? (sphere_node31.is_main ? "red" : (sphere_node31.group_id === 1 ? modelColor1 : (sphere_node31.group_id === 2 ? modelColor2 : (sphere_node31.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node31.is_connected ? (sphere_node31.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3041,7 +2856,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node32.select_color
-                               diffuseColor: sphere_node32.is_connected ? (sphere_node32.is_main ? "red" : (sphere_node32.group_id === 1 ? modelColor1 : (sphere_node32.group_id === 2 ? modelColor2 : (sphere_node32.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node32.is_connected ? (sphere_node32.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3111,7 +2926,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node33.select_color
-                               diffuseColor: sphere_node33.is_connected ? (sphere_node33.is_main ? "red" : (sphere_node33.group_id === 1 ? modelColor1 : (sphere_node33.group_id === 2 ? modelColor2 : (sphere_node33.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node33.is_connected ? (sphere_node33.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3181,7 +2996,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node34.select_color
-                               diffuseColor: sphere_node34.is_connected ? (sphere_node34.is_main ? "red" : (sphere_node34.group_id === 1 ? modelColor1 : (sphere_node34.group_id === 2 ? modelColor2 : (sphere_node34.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node34.is_connected ? (sphere_node34.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3252,7 +3067,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node35.select_color
-                               diffuseColor: sphere_node35.is_connected ? (sphere_node35.is_main ? "red" : (sphere_node35.group_id === 1 ? modelColor1 : (sphere_node35.group_id === 2 ? modelColor2 : (sphere_node35.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node35.is_connected ? (sphere_node35.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3322,7 +3137,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node36.select_color
-                               diffuseColor: sphere_node36.is_connected ? (sphere_node36.is_main ? "red" : (sphere_node36.group_id === 1 ? modelColor1 : (sphere_node36.group_id === 2 ? modelColor2 : (sphere_node36.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node36.is_connected ? (sphere_node36.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3393,7 +3208,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node37.select_color
-                               diffuseColor: sphere_node37.is_connected ? (sphere_node37.is_main ? "red" : (sphere_node37.group_id === 1 ? modelColor1 : (sphere_node37.group_id === 2 ? modelColor2 : (sphere_node37.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node37.is_connected ? (sphere_node37.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3464,7 +3279,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node38.select_color
-                               diffuseColor: sphere_node38.is_connected ? (sphere_node38.is_main ? "red" : (sphere_node38.group_id === 1 ? modelColor1 : (sphere_node38.group_id === 2 ? modelColor2 : (sphere_node38.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node38.is_connected ? (sphere_node38.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3535,7 +3350,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node39.select_color
-                               diffuseColor: sphere_node39.is_connected ? (sphere_node39.is_main ? "red" : (sphere_node39.group_id === 1 ? modelColor1 : (sphere_node39.group_id === 2 ? modelColor2 : (sphere_node39.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node39.is_connected ? (sphere_node39.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3606,7 +3421,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node40.select_color
-                               diffuseColor: sphere_node40.is_connected ? (sphere_node40.is_main ? "red" : (sphere_node40.group_id === 1 ? modelColor1 : (sphere_node40.group_id === 2 ? modelColor2 : (sphere_node40.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node40.is_connected ? (sphere_node40.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3677,7 +3492,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node41.select_color
-                               diffuseColor: sphere_node41.is_connected ? (sphere_node41.is_main ? "red" : (sphere_node41.group_id === 1 ? modelColor1 : (sphere_node41.group_id === 2 ? modelColor2 : (sphere_node41.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node41.is_connected ? (sphere_node41.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3748,7 +3563,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node42.select_color
-                               diffuseColor: sphere_node42.is_connected ? (sphere_node42.is_main ? "red" : (sphere_node42.group_id === 1 ? modelColor1 : (sphere_node42.group_id === 2 ? modelColor2 : (sphere_node42.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node42.is_connected ? (sphere_node42.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3819,7 +3634,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node43.select_color
-                               diffuseColor: sphere_node43.is_connected ? (sphere_node43.is_main ? "red" : (sphere_node43.group_id === 1 ? modelColor1 : (sphere_node43.group_id === 2 ? modelColor2 : (sphere_node43.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node43.is_connected ? (sphere_node43.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3890,7 +3705,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node44.select_color
-                               diffuseColor: sphere_node44.is_connected ? (sphere_node44.is_main ? "red" : (sphere_node44.group_id === 1 ? modelColor1 : (sphere_node44.group_id === 2 ? modelColor2 : (sphere_node44.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node44.is_connected ? (sphere_node44.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -3961,7 +3776,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node45.select_color
-                               diffuseColor: sphere_node45.is_connected ? (sphere_node45.is_main ? "red" : (sphere_node45.group_id === 1 ? modelColor1 : (sphere_node45.group_id === 2 ? modelColor2 : (sphere_node45.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node45.is_connected ? (sphere_node45.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -4032,7 +3847,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node46.select_color
-                               diffuseColor: sphere_node46.is_connected ? (sphere_node46.is_main ? "red" : (sphere_node46.group_id === 1 ? modelColor1 : (sphere_node46.group_id === 2 ? modelColor2 : (sphere_node46.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node46.is_connected ? (sphere_node46.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -4103,7 +3918,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node47.select_color
-                               diffuseColor: sphere_node47.is_connected ? (sphere_node47.is_main ? "red" : (sphere_node47.group_id === 1 ? modelColor1 : (sphere_node47.group_id === 2 ? modelColor2 : (sphere_node47.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node47.is_connected ? (sphere_node47.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -4174,7 +3989,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node48.select_color
-                               diffuseColor: sphere_node48.is_connected ? (sphere_node48.is_main ? "red" : (sphere_node48.group_id === 1 ? modelColor1 : (sphere_node48.group_id === 2 ? modelColor2 : (sphere_node48.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node48.is_connected ? (sphere_node48.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -4245,7 +4060,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node49.select_color
-                               diffuseColor: sphere_node49.is_connected ? (sphere_node49.is_main ? "red" : (sphere_node49.group_id === 1 ? modelColor1 : (sphere_node49.group_id === 2 ? modelColor2 : (sphere_node49.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node49.is_connected ? (sphere_node49.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -4316,7 +4131,7 @@ Window {
                            property real select_color: 0.6
                            materials: DefaultMaterial {
                                opacity: sphere_node50.select_color
-                               diffuseColor: sphere_node50.is_connected ? (sphere_node50.is_main ? "red" : (sphere_node50.group_id === 1 ? modelColor1 : (sphere_node50.group_id === 2 ? modelColor2 : (sphere_node50.group_id === 3 ? modelColor3 : modelColor4)))) : "#646566"
+                               diffuseColor: sphere_node50.is_connected ? (sphere_node50.is_main ? "red" : "cyan") : "#646566"
                            }
 
                            Component.onCompleted: {
@@ -4403,11 +4218,6 @@ Window {
                                    zOffset = map_from.z
 
                                    if_release = true
-
-                                   // 先更新位置信息，再更新相对坐标显示
-                                   show_position(pickNode)
-                                   updateRelativePosition(pickNode)
-
                                    // 多选操作
                                    if (ifpick) {
                                        select_merge.push(pickNode)
@@ -4422,9 +4232,6 @@ Window {
                              //      pick_name.text = "None"
                               //     pick_distance.text = " "
                              //      pick_word.text = " "
-
-                                   // 清空相对坐标显示
-                                   updateRelativePosition(null)
 
                                    for(var i = 0; i < select_merge.length; i++)
                                        select_merge[i].select_color = 0.6
@@ -4444,7 +4251,6 @@ Window {
                                }
 
                                show_position(pickNode)
-                               updateRelativePosition(pickNode)  // 移动时更新相对坐标
 
                                if(if_release) { // 解决被挤开后再次回来碰撞问题
                                    var pos_temp = Qt.vector3d(mouse.x + xOffset, mouse.y + yOffset, zOffset);
@@ -4644,7 +4450,7 @@ Window {
             //}
         }
 
-        // 控制面板
+        // 右侧控制面板
         Rectangle {
             id: controlPanel
             width: 245
@@ -4749,8 +4555,6 @@ Window {
 
                                             grp_pos_mp[1] = 1
                                             group_num = 1
-                                            updateGroupCounts()
-                                            planArrChanged()
                                         } else if (input3.text === "2") {//1、改groupid 2、设主机（同组的其他 视情况 设为从机）
 
 
@@ -4855,26 +4659,14 @@ Window {
                                             canv2.visible = true
                                             canv3.visible = false
                                             canv4.visible = false
-                                            // 强制重新绘制需要显示的Canvas
-                                            canv.requestPaint()
-                                            canv2.requestPaint()
 
                                             move_model(1,2)
                                             move_model(2,2)
-                                            updateGroupCounts()
-                                            planArrChanged()
                                         } else if (input3.text === "3") {
-                                            console.log("设置分组3的Canvas可见性");
                                             canv.visible = true
                                             canv4.visible = true
                                             canv2.visible = true
                                             canv3.visible = true
-                                            // 强制重新绘制Canvas
-                                            canv.requestPaint()
-                                            canv2.requestPaint()
-                                            canv3.requestPaint()
-                                            canv4.requestPaint()
-                                            console.log("Canvas状态:", canv.visible, canv2.visible, canv3.visible, canv4.visible);
                                             for (var k = 0; k < plan_arr.length; k++) {
                                                 if (k < plan_arr.length / 3) {
                                                     plan_arr[k].group_id = 1
@@ -4949,47 +4741,32 @@ Window {
                                                     }
                                                 }
                                             }
-                                            move_model(1,3)
-                                            move_model(2,3)
-                                            move_model(3,3)
-                                            updateGroupCounts()
-                                            planArrChanged()
+                                            move_model(1,2)
+                                            move_model(2,2)
+                                            move_model(3,4)
                                         } else if (input3.text === "4") {
                                             canv.visible = true
                                             canv4.visible = true
                                             canv2.visible = true
                                             canv3.visible = true
-                                            // 强制重新绘制Canvas
-                                            canv.requestPaint()
-                                            canv2.requestPaint()
-                                            canv3.requestPaint()
-                                            canv4.requestPaint()
-
-                                            // 初始化边界索引
-                                            var bound1 = Math.floor(plan_arr.length / 4);
-                                            var bound2 = Math.floor(plan_arr.length / 2);
-                                            var bound3 = Math.floor(plan_arr.length * 3 / 4);
-
                                             for (var l = 0; l < plan_arr.length; l++) {
-                                                if (l < bound1) {
+                                                if (l < plan_arr.length / 4) {
                                                     plan_arr[l].group_id = 1
-                                                } else if (l < bound2) {
+                                                    i = l
+                                                } else if (l >= plan_arr.length / 4 && l < plan_arr.length / 2) {
                                                     plan_arr[l].group_id = 2
-                                                } else if (l < bound3) {
+                                                    j = l
+                                                } else if (l >= plan_arr.length / 2 && l < plan_arr.length * 3 / 4) {
                                                     plan_arr[l].group_id = 3
+                                                    k = l
                                                 } else {
                                                     plan_arr[l].group_id = 4
                                                 }
-                                                if(plan_arr[l].is_connected)swarm_send.store_airplane_group(plan_arr[l].objectName, plan_arr[l].group_id, true)
+                                                if(plan_arr[l].is_connected)swarm_send.store_airplane_group(plan_arr[l], plan_arr[l].group_id, true)
                                             }
                                             main_node_name.length = 4
-                                            main_node_name[0] = ""
-                                            main_node_name[1] = ""
-                                            main_node_name[2] = ""
-                                            main_node_name[3] = ""
 
-                                            // 为每组设置主机
-                                            for (var mn4_1 = 0; mn4_1 < bound1 && mn4_1 < plan_arr.length; mn4_1++) {
+                                            for (var mn4_1 = 0; mn4_1 < plan_arr.length  / 4; mn4_1++) {
                                                 if (if_main_node(plan_arr[mn4_1].objectName)) {
                                                     main_node_name[0] = plan_arr[mn4_1].objectName
                                                     set_main_name(plan_arr[mn4_1])
@@ -5001,11 +4778,11 @@ Window {
                                                 if(plan_arr[mn4_1].is_connected === true)set_main_color(plan_arr[mn4_1].objectName)
                                             }
 
-                                            for (var mn4_2 = bound1; mn4_2 < bound2 && mn4_2 < plan_arr.length; mn4_2++) {
+                                            for (var mn4_2 = i + 1; mn4_2 >= plan_arr.length / 4 && mn4_2 < plan_arr.length / 2; mn4_2++) {
                                                 if (if_main_node(plan_arr[mn4_2].objectName)) {
                                                     main_node_name[1] = plan_arr[mn4_2].objectName
                                                     set_main_name(plan_arr[mn4_2])
-                                                    if(plan_arr[mn4_2].is_connected === true)set_main_color(plan_arr[mn4_2].objectName)
+                                                    if(plan_arr[mn4_2].is_connected === true)set_main_color([plan_arr[mn4_2]].objectName)
                                                     break;
                                                 }
                                                 main_node_name[1] = plan_arr[mn4_2].objectName
@@ -5013,7 +4790,7 @@ Window {
                                                 if(plan_arr[mn4_2].is_connected === true)set_main_color(plan_arr[mn4_2].objectName)
                                             }
 
-                                            for (var mn4_3 = bound2; mn4_3 < bound3 && mn4_3 < plan_arr.length; mn4_3++) {
+                                            for (var mn4_3 = j + 1; mn4_3 >= plan_arr.length / 2 && mn4_3 < plan_arr.length *3 / 4; mn4_3++) {
                                                 if (if_main_node(plan_arr[mn4_3].objectName)) {
                                                     main_node_name[2] = plan_arr[mn4_3].objectName
                                                     set_main_name(plan_arr[mn4_3])
@@ -5024,7 +4801,7 @@ Window {
                                                 set_main_name(plan_arr[mn4_3])
                                                 if(plan_arr[mn4_3].is_connected === true)set_main_color(plan_arr[mn4_3].objectName)
                                             }
-                                            for (var mn4_4 = bound3; mn4_4 < plan_arr.length; mn4_4++) {
+                                            for (var mn4_4 = k + 1; mn4_4 >= plan_arr.length *3 / 4 && mn4_4 < plan_arr.length; mn4_4++) {
                                                 if (if_main_node(plan_arr[mn4_4].objectName)) {
                                                     main_node_name[3] = plan_arr[mn4_4].objectName
                                                     set_main_name(plan_arr[mn4_4])
@@ -5055,22 +4832,24 @@ Window {
                                             send_all_airplane_pos(4,0) // 四组全更新
                                             group_num = 4
 
-                                            // 设置位置映射
-                                            grp_pos_mp[1] = 1
+                                          /*  grp_pos_mp[1] = 1 // 如果是2345 组呢
                                             grp_pos_mp[2] = 2
                                             grp_pos_mp[3] = 3
-                                            grp_pos_mp[4] = 4
+                                            grp_pos_mp[4] = 4*/
+                                            for(i = 0; i < main_node_name.length;i++) {
+                                                for(j = 0;j < plan_arr.length;j++){
+                                                    if(plan_arr[j].objectName === main_node_name[i]) {
 
-                                            move_model(1,4)
-                                            move_model(2,4)
+                                                        grp_pos_mp[plan_arr[j].group_id] = i + 1 // 要的是grp  不是name
+                                                    }
+                                                }
+                                            }
+                                            move_model(1,2)
+                                            move_model(2,2)
                                             move_model(3,4)
                                             move_model(4,4)
-                                            updateGroupCounts()
-                                            planArrChanged()
                                         }
                                     }
-                                    updateGroupCounts()  // 更新各组数量显示
-                                    planArrChanged()  // 刷新高度调整框
                                 }
                             }
                         }
@@ -5108,8 +4887,6 @@ Window {
 
                                             send_all_airplane_pos(mouse_area.pickNode.group_id,0)
                                         }
-                                        updateGroupCounts()  // 更新各组数量显示
-                                        planArrChanged()  // 刷新高度调整框
 
                                     } else {
                                         group_popup.open()
@@ -5119,359 +4896,111 @@ Window {
                         }
 
 
-                        // 独立分组操作
-                        Label {
-                            text: "独立分组:"
-                            color: textColor
-                        }
+                        // 分组操作按钮
                         Row {
-                            spacing: 4
+                            Layout.fillWidth: true
+                            spacing: 13
 
                             CustomButton {
-                                text: "独立"
-                                width: 35
+                                text: "独立分组"
+                               // Layout.fillWidth: true
                                 color: root.accentColor
                                 onClicked: {
-                                    // 检查输入的组号是否有效
-                                    var targetGroupId = Number(input_independent_group.text);
-                                    if (targetGroupId < 1 || targetGroupId > 4) {
-                                        console.log("目标组号必须在1-4之间");
-                                        return;
-                                    }
-
-                                    // 检查是否有选中的模型
-                                    if(select_merge.length === 0) {
-                                        console.log("请先右键选择要独立分组的模型");
-                                        return;
-                                    }
-
-                                    // 检查目标组号是否已经存在
-                                    var targetGroupExists = false;
-                                    for(var check = 0; check < plan_arr.length; check++) {
-                                        if(plan_arr[check].group_id === targetGroupId) {
-                                            targetGroupExists = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if(targetGroupExists) {
-                                        console.log("目标组号", targetGroupId, "已存在，请选择其他组号");
-                                        return;
-                                    }
-
-                                    // 统计当前实际有模型的组数
-                                    var actualGroupCount = 0;
-                                    var existingGroups = {};
-                                    for(var cnt = 0; cnt < plan_arr.length; cnt++) {
-                                        if(!existingGroups[plan_arr[cnt].group_id]) {
-                                            existingGroups[plan_arr[cnt].group_id] = true;
-                                            actualGroupCount++;
-                                        }
-                                    }
-
-                                    // 如果实际组数已经达到4组，不能再分组
-                                    if(actualGroupCount >= 4) {
+                                    // 原有功能
+                                    if(select_merge.length === 0)return
+                                    if(group_num >= 4) {
                                         select_merge.length = 0;
                                         for(var i1 = 0; i1 < select_merge.length; i1++) {
-                                            select_merge[i1].select_color = 0.6;
+                                            select_merge[i1].select_color = 0.6 // 颜色咋没恢复 ?
                                         }
                                         devide_grp_pop.open();
-                                        return;
+                                        return
                                     }
+                                    group_num += 1
 
-                                    // 将选中的模型分配到目标组
                                     for(var i = 0; i < select_merge.length; i++) {
-                                        select_merge[i].group_id = targetGroupId;
-                                        select_merge[i].select_color = 0.6;
+                                        select_merge[i].group_id = main_node_name.length + 1//默认main_node[]是连续的,如果不连续  会出问题   能不能用main_node[]length?
+                                      //  console.log("grp",select_merge[i].group_id)
+                                        select_merge[i].select_color = 0.6
 
-                                        if(select_merge[i].is_connected === true) {
-                                            // 第一个选中的会成为主机，其他的设为从机
-                                            if(i === 0) {
-                                                swarm_send.store_airplane_group(select_merge[i].objectName, select_merge[i].group_id, true, false);
-                                            } else {
-                                                // 非第一个选中的，设为从机
-                                                swarm_send.store_airplane_group(select_merge[i].objectName, select_merge[i].group_id, true, true);
-                                            }
-                                        }
+                                        if(select_merge[i].is_connected === true)swarm_send.store_airplane_group(select_merge[i].objectName, select_merge[i].group_id,true)
+                                      /*  else
+                                            swarm_send.store_airplane_group(select_merge[i].objectName, select_merge[i].group_id,false) // 应该不影响
+                                        */
                                     }
 
-                                    // 确保main_node_name数组有足够的长度
-                                    while(main_node_name.length < targetGroupId) {
-                                        main_node_name.push("");
+                                  //  main_node_name.length = 1
+                                    main_node_name[main_node_name.length]=select_merge[0].objectName
+                                 //   for(var u = 0; u < main_node_name.length;u++)console.log("after merge main",u,main_node_name[u])
+                                 //   console.log("se  len",select_merge.length,group_num,main_node_name[group_num-1],select_merge[0].objectName)
+                                    select_merge[0].set_main = 1
+                                 //   set_main_name(select_merge[0])
+                                    if(select_merge[0].is_connected === true){
+                                        swarm_send.set_main_airplane(main_node_name[main_node_name.length - 1], select_merge[0].group_id,
+                                                          0,
+                                                          0,
+                                                          0)
+
+
+                                        select_merge[0].is_main = true
+                                        set_main_color(select_merge[0])
+                                        send_all_airplane_pos(main_node_name.length,0)
                                     }
+                                    devide_screen(select_merge[0].group_id)
+                                    select_merge.length = 0
 
-                                    // 设置目标组的主机
-                                    main_node_name[targetGroupId - 1] = select_merge[0].objectName;
-                                    select_merge[0].set_main = 1;
-
-                                    if(select_merge[0].is_connected === true) {
-                                        swarm_send.set_main_airplane(main_node_name[targetGroupId - 1], select_merge[0].group_id,
-                                                          0, 0, 0);
-                                        select_merge[0].is_main = true;
-                                        set_main_color(select_merge[0]);
-                                    }
-
-                                    // 更新组数为实际组数+1（新增的组）
-                                    var newGroupNum = actualGroupCount + 1;
-
-                                    // 收集当前所有被占用的屏幕位置
-                                    var usedPositions = {};
-                                    for(var grpKey in grp_pos_mp) {
-                                        var grpId = Number(grpKey);
-                                        // 检查这个组是否真的有模型
-                                        var grpHasModels = false;
-                                        for(var chk = 0; chk < plan_arr.length; chk++) {
-                                            if(plan_arr[chk].group_id === grpId) {
-                                                grpHasModels = true;
-                                                break;
-                                            }
-                                        }
-                                        if(grpHasModels && grp_pos_mp[grpKey] > 0) {
-                                            usedPositions[grp_pos_mp[grpKey]] = grpId;
-                                            console.log("位置", grp_pos_mp[grpKey], "被组", grpId, "占用");
-                                        }
-                                    }
-
-                                    // 为新组分配一个空闲的屏幕位置
-                                    // 位置1=左上, 2=右上, 3=左下, 4=右下
-                                    // 优先分配与组号相同的位置（如第4组优先放位置4）
-                                    var newPos = 0;
-                                    if(!usedPositions[targetGroupId] && targetGroupId >= 1 && targetGroupId <= 4) {
-                                        // 优先使用与组号相同的位置
-                                        newPos = targetGroupId;
-                                        grp_pos_mp[targetGroupId] = newPos;
-                                        console.log("为组", targetGroupId, "分配对应位置", newPos);
-                                    } else {
-                                        // 否则找一个空闲的位置
-                                        for(var pos = 1; pos <= 4; pos++) {
-                                            if(!usedPositions[pos]) {
-                                                newPos = pos;
-                                                grp_pos_mp[targetGroupId] = pos;
-                                                console.log("为组", targetGroupId, "分配空闲位置", pos);
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    // 设置分屏线可见性
-                                    if(newGroupNum >= 3) {
-                                        canv.visible = true;
-                                        canv2.visible = true;
-                                        canv3.visible = true;
-                                        canv4.visible = true;
-                                        canv.requestPaint();
-                                        canv2.requestPaint();
-                                        canv3.requestPaint();
-                                        canv4.requestPaint();
-                                    } else if(newGroupNum === 2) {
-                                        canv.visible = true;
-                                        canv2.visible = true;
-                                        canv3.visible = false;
-                                        canv4.visible = false;
-                                        canv.requestPaint();
-                                        canv2.requestPaint();
-                                    }
-
-                                    group_num = newGroupNum;
-
-                                    // 将新组的模型移动到分配的屏幕位置，并检测碰撞
-                                    if(newPos > 0) {
-                                        moveGroupToPositionWithCollision(targetGroupId, newPos);
-                                    }
-
-                                    if(select_merge[0].is_connected === true) {
-                                        send_all_airplane_pos(targetGroupId, 0);
-                                    }
-
-                                    // 注意：主机和从机的状态变更提示由PX4端发送ACK消息触发
-                                    // 不在这里本地生成提示，避免重复
-
-                                    select_merge.length = 0;
-
-                                    console.log("独立分组完成，目标组号:", targetGroupId, "当前组数:", group_num);
-                                    console.log("grp_pos_mp:", JSON.stringify(grp_pos_mp));
-                                    updateGroupCounts()  // 更新各组数量显示
-                                    planArrChanged()  // 刷新高度调整框
+                                    all_move_by_line()
                                 }
                             }
-                            Label {
-                                text: "到"
-                                color: textColor
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            CustomTextField {
-                                id: input_independent_group
-                                text: "2"
-                                width: 30
-                                validator: IntValidator { bottom: 1; top: 4 }
-                            }
-                            Label {
-                                text: "组"
-                                color: root.textColor
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
+
                             CustomButton {
-                                text: "合并"
-                                width: 35
+                                text: "合并分组"
+                               // Layout.fillWidth: true
                                 color: secondaryColor
                                 onClicked: {
-                                    // 需要选中至少2个主机才能合并
-                                    if(select_merge.length < 2) {
-                                        console.log("请选择至少2个主机进行合并");
-                                        return;
-                                    }
-
-                                    // 检查所有选中的是否都是主机
-                                    for(var c = 0; c < select_merge.length; c++) {
-                                        console.log("检查模型:", select_merge[c].objectName, "set_main:", select_merge[c].set_main, "类型:", typeof select_merge[c].set_main);
-                                        // 兼容 1, true, "1" 等情况
-                                        if(select_merge[c].set_main != 1 && select_merge[c].set_main !== true) {
-                                            console.log("只能选择主机进行合并, 模型", select_merge[c].objectName, "不是主机");
-                                            return;
-                                        }
-                                    }
-
-                                    var targetGroup = select_merge[0].group_id;  // 目标组（第一个选中的主机所在组）
-                                    var targetPos = grp_pos_mp[targetGroup];  // 目标组的屏幕位置
-                                    console.log("合并到组:", targetGroup, "位置:", targetPos);
-
-                                    // 找到目标组当前占用的最大X坐标，用于放置被合并的模型
-                                    var targetMaxX = 0;
-                                    for(var t = 0; t < plan_arr.length; t++) {
-                                        if(plan_arr[t].group_id === targetGroup) {
-                                            if(plan_arr[t].model_x > targetMaxX) {
-                                                targetMaxX = plan_arr[t].model_x;
-                                            }
-                                        }
-                                    }
-                                    console.log("目标组最大X坐标:", targetMaxX);
-
-                                    // 处理被合并的组
+                                    if(select_merge.length < 1)return
+                                    for(var c = 0; c < select_merge.length;c++){if(select_merge[c].set_main !== true)return}
+                                    var temp = 0
                                     for(var h = 1; h < select_merge.length; h++) {
-                                        var sourceGroup = select_merge[h].group_id;
-                                        var sourcePos = grp_pos_mp[sourceGroup];  // 被合并组的屏幕位置
-                                        console.log("合并组", sourceGroup, "位置", sourcePos, "到组", targetGroup, "位置", targetPos);
+                                        temp = select_merge[h].group_id
+                                        main_node_name[temp - 1] = 0
 
-                                        // 收集被合并组的所有模型，并找到它们的最小X坐标
-                                        var sourceModels = [];
-                                        var sourceMinX = 9999;
-                                        var sourceMinY = 9999;
-                                        for(var j = 0; j < plan_arr.length; j++) {
-                                            if(plan_arr[j].group_id === sourceGroup) {
-                                                sourceModels.push(plan_arr[j]);
-                                                if(plan_arr[j].model_x < sourceMinX) {
-                                                    sourceMinX = plan_arr[j].model_x;
-                                                }
-                                                if(plan_arr[j].model_y < sourceMinY) {
-                                                    sourceMinY = plan_arr[j].model_y;
-                                                }
-                                            }
-                                        }
-                                        console.log("被合并组模型数:", sourceModels.length, "最小X:", sourceMinX, "最小Y:", sourceMinY);
-
-                                        // 计算偏移量：将被合并组平移到目标组右侧
-                                        // 新位置X = 目标组最大X + 1，Y保持相对位置
-                                        var offsetX = (targetMaxX + 1) - sourceMinX;
-                                        // 找到目标组的最小Y，让被合并组Y对齐
-                                        var targetMinY = 9999;
-                                        for(var ty = 0; ty < plan_arr.length; ty++) {
-                                            if(plan_arr[ty].group_id === targetGroup) {
-                                                if(plan_arr[ty].model_y < targetMinY) {
-                                                    targetMinY = plan_arr[ty].model_y;
-                                                }
-                                            }
-                                        }
-                                        var offsetY = targetMinY - sourceMinY;
-                                        console.log("平移偏移量: offsetX=", offsetX, "offsetY=", offsetY);
-
-                                        // 平移被合并组的所有模型（保持原队形）
-                                        for(var k = 0; k < sourceModels.length; k++) {
-                                            var model = sourceModels[k];
-                                            var newX = model.model_x + offsetX;
-                                            var newY = model.model_y + offsetY;
-                                            console.log("平移模型", model.objectName, "从", model.model_x, model.model_y, "到", newX, newY);
-
-                                            // 使用screen_pos_to_world_pos更新模型位置
-                                            screen_pos_to_world_pos(newX, newY, model);
-
-                                            // 更新组别
-                                            model.group_id = targetGroup;
-                                            model.set_main = 0;
-                                            model.is_main = false;
-                                            if(model.is_connected) {
-                                                swarm_send.store_airplane_group(model.objectName, targetGroup, true, true);
-                                            }
-
-                                            // 更新targetMaxX以便下一组合并时使用
-                                            if(newX > targetMaxX) {
-                                                targetMaxX = newX;
-                                            }
-                                        }
-
-                                        // 清除被合并组的主机信息
-                                        main_node_name[sourceGroup - 1] = 0;
-
-                                        // 清除被合并组的位置映射
-                                        grp_pos_mp[sourceGroup] = 0;
-                                        delete grp_pos_mp[sourceGroup];
-
-                                        // 被合并的主机也变成从机
-                                        select_merge[h].set_main = 0;
-                                        select_merge[h].is_main = false;
-                                        select_merge[h].select_color = 0.6;
+                                        find_max_pos(select_merge[0].group_id, select_merge[h].group_id)  // 如果是剩余两组呢？
+                                        grp_pos_mp[select_merge[h].group_id] = 0
+                                        delete grp_pos_mp[select_merge[h].group_id]
                                     }
+                                    merge_grp()
+                                    for(var i = 1; i < select_merge.length; i++) {
 
-                                    select_merge[0].select_color = 0.6;
 
-                                    // 更新组数
-                                    group_num = group_num - select_merge.length + 1;
+                                      //  console.log("grp",i,select_merge[i].objectName,select_merge[i].group_id,main_node_name[temp - 1])
 
-                                    // 根据剩余组的实际位置更新分屏线可见性
-                                    // 位置: 1=左上, 2=右上, 3=左下, 4=右下
-                                    // canv+canv2 = 垂直线| (分隔左右)
-                                    // canv3+canv4 = 水平线— (分隔上下)
-                                    var hasLeft = false;   // 左边有组 (位置1或3)
-                                    var hasRight = false;  // 右边有组 (位置2或4)
-                                    var hasTop = false;    // 上边有组 (位置1或2)
-                                    var hasBottom = false; // 下边有组 (位置3或4)
+                                        select_merge[i].group_id = select_merge[0].group_id // 全设为第一个选中的
+                                        select_merge[i].set_main = 0
+                                        if (select_merge[i].is_connected === false)select_merge[i].is_main = 0
 
-                                    for(var grpKey in grp_pos_mp) {
-                                        var pos = grp_pos_mp[grpKey];
-                                        if(pos === 1) { hasLeft = true; hasTop = true; }
-                                        if(pos === 2) { hasRight = true; hasTop = true; }
-                                        if(pos === 3) { hasLeft = true; hasBottom = true; }
-                                        if(pos === 4) { hasRight = true; hasBottom = true; }
+                                        select_merge[i].select_color = 0.6
+
                                     }
+                                    select_merge[0].select_color = 0.6
+                                  //  main_node_name.length = 1
 
-                                    // 垂直线：只有左右都有组时才显示
-                                    var showVertical = hasLeft && hasRight;
-                                    // 水平线：只有上下都有组时才显示
-                                    var showHorizontal = hasTop && hasBottom;
+                                    group_num = group_num - select_merge.length + 1
 
-                                    canv.visible = showVertical;   // 垂直线上半
-                                    canv2.visible = showVertical;  // 垂直线下半
-                                    canv3.visible = showHorizontal; // 水平线左半
-                                    canv4.visible = showHorizontal; // 水平线右半
-
-                                    if(showVertical) {
-                                        canv.requestPaint();
-                                        canv2.requestPaint();
+                                  //  set_main_name(select_merge[0])
+                                    if(select_merge[0].is_connected === true){
+                              /*          swarm_send.set_main_airplane(main_node_name[group_num - 1], select_merge[0].group_id,// 还需要吗
+                                                          0,
+                                                          0,
+                                                          0)
+                        */
+                                      //  select_merge[0].is_main = true
+                                      //  set_main_color(select_merge[0])
+                                        send_all_airplane_pos(select_merge[0].group_id,0)
                                     }
-                                    if(showHorizontal) {
-                                        canv3.requestPaint();
-                                        canv4.requestPaint();
-                                    }
-
-                                    console.log("分界线状态: 垂直=", showVertical, "水平=", showHorizontal);
-
-                                    if(select_merge[0].is_connected === true) {
-                                        send_all_airplane_pos(targetGroup, 0);
-                                    }
-
-                                    select_merge.length = 0;
-                                    updateGroupCounts();  // 更新各组数量显示
-                                    planArrChanged();  // 刷新高度调整框
-                                    console.log("合并完成，当前组数:", group_num);
+                                  //  devide_screen(select_merge[0].group_id)
+                                    select_merge.length = 0
+                                 //   for(var u = 0; u < main_node_name.length;u++)console.log("after merge main",u,main_node_name[u])
                                 }
                             }
                         }
@@ -5566,88 +5095,45 @@ Window {
                         leftPadding: 5
                     }
 
-                    // 保存上一次的间距和高度值，用于提示
-                    property int lastDistance: 1
-                    property int lastHeight: 0
-
                     ColumnLayout {
                         anchors.fill: parent
-                        spacing: 8
+                        spacing: 15
 
                         RowLayout {
-                            spacing: 8
+                            spacing: 10
                             Label {
-                                text: "间距:"
+                                text: "间距："
                                 color: root.textColor
-                                font.pixelSize: 12
                             }
                             CustomTextField {
                                 id: input5
                                 text: "1"
-                                width: 30
-                                validator: IntValidator { bottom: 1; top: 99 }
-                                onTextChanged: {
-                                    // 间距变化时更新相对坐标显示
-                                    if (mouse_area.pickNode) {
-                                        updateRelativePosition(mouse_area.pickNode);
-                                    }
-                                    // 间距变化时发送数据给飞控
-                                    if (text !== "" && Number(text) > 0) {
-                                        for (var g = 1; g <= group_num; g++) {
-                                            send_all_airplane_pos(g, 0);
-                                        }
-                                    }
-                                }
+                                width: 40
+                                validator: IntValidator { bottom: 1; top: 4 }
                             }
                             Label {
                                 text: "米"
                                 color: textColor
-                                font.pixelSize: 12
-                            }
-                            Item { width: 10 }
-                            Label {
-                                text: "相对主机:" + (relativeMainName !== "" ? relativeMainName : "-")
-                                color: "#88c0d0"
-                                font.pixelSize: 11
                             }
                         }
 
                         RowLayout {
-                            spacing: 8
+                            spacing: 10
                             Label {
-                                text: "高度:"
+                                text: "高度："
                                 color: textColor
-                                font.pixelSize: 12
                             }
                             CustomTextField {
                                 id: input6
                                 text: "0"
-                                width: 30
-                                validator: IntValidator { bottom: -99; top: 99 }
+                                width: 40
+                                validator: IntValidator { bottom: 1; top: 4 }
                             }
                             Label {
                                 text: "米"
                                 color: textColor
-                                font.pixelSize: 12
-                            }
-                            Item { width: 10 }
-                            Label {
-                                text: "东" + relativeEast
-                                color: "#a3be8c"
-                                font.pixelSize: 11
-                            }
-                            Label {
-                                text: "北" + relativeNorth
-                                color: "#a3be8c"
-                                font.pixelSize: 11
-                            }
-                            Label {
-                                text: "上" + relativeAlt
-                                color: "#a3be8c"
-                                font.pixelSize: 11
                             }
                         }
-
                         RowLayout {
                         CustomButton {
                             text: "设置高度"
@@ -5658,15 +5144,13 @@ Window {
                                 if (!mouse_area.pickNode) {
                                     return
                                 }
-
-                                mouse_area.pickNode.model_z = Number(input6.text)
+                                mouse_area.pickNode.model_z = Number(input2.text)
                                 if (mouse_area.pickNode.is_connected) {
-                                    idpos_map[mouse_area.pickNode.objectName][2] = Number(input6.text)
+                                    idpos_map[mouse_area.pickNode.objectName][2] = Number(input2.text)
                                 }
 
                                 show_position(mouse_area.pickNode) // 界面显示数据
-                                updateRelativePosition(mouse_area.pickNode)  // 更新相对坐标
-                                send_all_airplane_pos(mouse_area.pickNode.group_id, 0)
+                                send_all_airplane_pos(mouse_area.pickNode.group_id,0)
                             }
                         }
                         CustomButton {
@@ -5682,12 +5166,11 @@ Window {
 
                                 main_node_name[mouse_area.pickNode.group_id - 1] = mouse_area.pickNode.objectName
                                 set_main_name(mouse_area.pickNode)
-                                updateRelativePosition(mouse_area.pickNode)  // 更新相对坐标
                                     if (!mouse_area.pickNode.is_connected) return
                                     mouse_area.pickNode.is_main = true
                                   //  swarm_send.set_main_airplane(main_node_name[node.group_id - 1], node.group_id, 0, 0, 0)
                                     set_main_behavior(mouse_area.pickNode,1)  //要发位置
-                                    planArrChanged()  // 刷新高度调整框
+
                             }
                         }
                         }
@@ -5736,280 +5219,6 @@ Window {
                     }
                 }
 
-            }
-        }
-
-        // 飞机高度调整区域 - 在蓝色框和底部状态栏之间
-        Rectangle {
-            id: droneHeightArea
-            anchors {
-                left: controlPanel.right
-                right: parent.right
-                bottom: bottomBar.top
-                margins: 12
-                bottomMargin: 6
-            }
-            height: 150
-
-            // 飞机高度调整框
-            Rectangle {
-                id: droneStatusBar
-                anchors.fill: parent
-                color: root.panelColor
-                radius: 8
-                border.color: "#4c566a"
-                border.width: 1
-                clip: true
-
-                // 高度刻度（左侧）
-                Column {
-                    id: heightScale
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 5
-                    width: 30
-                    spacing: 0
-
-                    Text {
-                        text: "高度"
-                        font.pixelSize: 10
-                        font.bold: true
-                        color: "#88c0d0"
-                        width: parent.width
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Repeater {
-                        model: 5
-                        delegate: Item {
-                            width: 30
-                            height: (droneStatusBar.height - 30) / 5
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: (5 - index) + "x"  // 从上到下: 5x, 4x, 3x, 2x, 1x
-                                font.pixelSize: 9
-                                color: "#a0a0a0"
-                            }
-
-                            Rectangle {
-                                anchors.bottom: parent.bottom
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                height: 1
-                                color: "#4c566a"
-                                visible: index < 4
-                            }
-                        }
-                    }
-                }
-
-                // 可滚动的飞机区域
-                Flickable {
-                    id: droneStatusFlickable
-                    anchors.left: heightScale.right
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.margins: 5
-                    anchors.leftMargin: 2
-                    contentWidth: droneHeightContent.width
-                    contentHeight: parent.height - 10
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
-
-                    ScrollBar.horizontal: ScrollBar {
-                        policy: droneStatusFlickable.contentWidth > droneStatusFlickable.width ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
-                        height: 8
-                    }
-
-                    Row {
-                        id: droneHeightContent
-                        spacing: 0
-                        height: parent.height
-
-                        // 动态生成各组
-                        Repeater {
-                            id: groupHeightRepeater
-                            model: 4
-
-                            delegate: Item {
-                                id: groupHeightItem
-                                property int groupId: index + 1
-                                property var groupDrones: []
-
-                                function updateGroupDrones() {
-                                    var newDrones = [];
-                                    for (var i = 0; i < plan_arr.length; i++) {
-                                        if (plan_arr[i].group_id === groupId && plan_arr[i].visible) {
-                                            newDrones.push(plan_arr[i]);
-                                        }
-                                    }
-                                    groupDrones = newDrones;
-                                    droneCount = newDrones.length;
-                                }
-
-                                property int droneCount: 0
-
-                                visible: droneCount > 0
-
-                                width: droneCount * 36 + 25 + (index > 0 ? 3 : 0)
-                                height: parent.height
-
-                                Row {
-                                    anchors.fill: parent
-                                    spacing: 0
-
-                                    // 组分隔线（粗线）
-                                    Rectangle {
-                                        visible: index > 0 && groupHeightItem.visible
-                                        width: 3
-                                        height: parent.height
-                                        color: "#5e81ac"
-                                    }
-
-                                    Column {
-                                        width: parent.width - (index > 0 ? 3 : 0)
-                                        height: parent.height
-
-                                        // 组标题
-                                        Rectangle {
-                                            width: parent.width
-                                            height: 18
-                                            color: "transparent"
-
-                                            Text {
-                                                anchors.left: parent.left
-                                                anchors.leftMargin: 3
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: "第" + groupId + "组"
-                                                font.pixelSize: 10
-                                                font.bold: true
-                                                color: groupId === 1 ? modelColor1 : (groupId === 2 ? modelColor2 : (groupId === 3 ? modelColor3 : modelColor4))
-                                            }
-                                        }
-
-                                        // 飞机列区域
-                                        Row {
-                                            width: parent.width
-                                            height: parent.height - 18
-                                            spacing: 0
-
-                                            Repeater {
-                                                model: groupHeightItem.groupDrones.length
-
-                                                delegate: Item {
-                                                    property var droneNode: groupHeightItem.groupDrones[index] || null
-                                                    property int droneHeight: droneNode ? (droneNode.model_z || 1) : 1  // 默认高度为1x
-                                                    width: 36
-                                                    height: parent.height
-
-                                                    Row {
-                                                        anchors.fill: parent
-                                                        spacing: 0
-
-                                                        // 飞机列（5个格子）
-                                                        Rectangle {
-                                                            width: 35
-                                                            height: parent.height
-                                                            color: "transparent"
-
-                                                            // 5个高度格子
-                                                            Column {
-                                                                anchors.fill: parent
-                                                                spacing: 0
-
-                                                                Repeater {
-                                                                    model: 5
-                                                                    delegate: Rectangle {
-                                                                        property int heightLevel: 5 - index  // 从上到下: 5, 4, 3, 2, 1
-                                                                        width: 35
-                                                                        height: (parent.height) / 5
-                                                                        color: droneHeight === heightLevel ?
-                                                                            (droneNode ?
-                                                                                (droneNode.is_main || droneNode.set_main ? "#bf616a" :  // 主机显示红色
-                                                                                    (droneNode.is_connected ?
-                                                                                        (groupId === 1 ? modelColor1 : (groupId === 2 ? modelColor2 : (groupId === 3 ? modelColor3 : modelColor4)))
-                                                                                        : "#646566"))
-                                                                                : "#646566")
-                                                                            : "transparent"
-                                                                        border.color: "#4c566a"
-                                                                        border.width: 1
-
-                                                                        // 飞机标识（只在当前高度显示）
-                                                                        Text {
-                                                                            anchors.centerIn: parent
-                                                                            text: droneNode && droneHeight === heightLevel ? droneNode.objectName : ""
-                                                                            font.pixelSize: 9
-                                                                            font.bold: true
-                                                                            color: "white"
-                                                                        }
-
-                                                                        MouseArea {
-                                                                            anchors.fill: parent
-                                                                            onClicked: {
-                                                                                if (droneNode) {
-                                                                                    droneNode.model_z = heightLevel;
-                                                                                    // 更新 idpos_map 中的高度值
-                                                                                    if (droneNode.is_connected && idpos_map[droneNode.objectName]) {
-                                                                                        idpos_map[droneNode.objectName][2] = heightLevel;
-                                                                                        // 发送新的高度到飞机
-                                                                                        send_all_airplane_pos(droneNode.group_id, 0);
-                                                                                    }
-                                                                                    console.log("设置飞机", droneNode.objectName, "高度为", heightLevel, "x");
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-
-                                                        // 飞机间分隔线（细线）
-                                                        Rectangle {
-                                                            width: 1
-                                                            height: parent.height
-                                                            color: "#3b4252"
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Component.onCompleted: updateGroupDrones()
-
-                                Connections {
-                                    target: root
-                                    function onGroup1CountChanged() { if (groupId === 1) groupHeightItem.updateGroupDrones(); }
-                                    function onGroup2CountChanged() { if (groupId === 2) groupHeightItem.updateGroupDrones(); }
-                                    function onGroup3CountChanged() { if (groupId === 3) groupHeightItem.updateGroupDrones(); }
-                                    function onGroup4CountChanged() { if (groupId === 4) groupHeightItem.updateGroupDrones(); }
-                                    function onPlanArrChanged() { groupHeightItem.updateGroupDrones(); }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 无飞机时的提示
-                Text {
-                    id: noPlaneText
-                    anchors.centerIn: parent
-                    text: "暂无筹划飞机"
-                    font.pixelSize: 14
-                    color: "#88c0d0"
-                    visible: plan_arr.length === 0
-
-                    Connections {
-                        target: root
-                        function onPlanArrChanged() {
-                            noPlaneText.visible = plan_arr.length === 0;
-                        }
-                    }
-                }
             }
         }
 
@@ -6069,21 +5278,11 @@ Window {
     component RadiusButton : Button {
         id: roundButton
         property color color: "#4CAF50" // 临时用具体颜色测试
-        width: 20
-        height: 20
-
-        // 确保按钮保持固定尺寸，不受布局影响
-        Layout.preferredWidth: 20
-        Layout.preferredHeight: 20
-        Layout.minimumWidth: 20
-        Layout.minimumHeight: 20
-        Layout.maximumWidth: 20
-        Layout.maximumHeight: 20
+        width: 60
+        height: width
 
         background: Rectangle {
-            width: 20
-            height: 20
-            radius: 10  // 固定半径为10，确保完美圆形
+            radius: roundButton.width / 2
             color: roundButton.down ? Qt.darker(roundButton.color, 1.2) :
                    roundButton.hovered ? Qt.lighter(roundButton.color, 1.2) : roundButton.color
             border.width: 1
@@ -6388,90 +5587,16 @@ Window {
     property var arr_to_change_pos: []
     property var grp_pos_mp: {0:0} // 组别对应的屏幕位置
 
-    // 当前选中模型相对于主机的坐标
-    property int relativeEast: 0   // 东(正) 西(负)
-    property int relativeNorth: 0  // 北(正) 南(负)
-    property int relativeAlt: 0    // 高度差
-    property string relativeMainName: ""  // 相对的主机名称
-
-    // 计算相对于主机的坐标 (参考caculate_pos的计算方式)
-    function updateRelativePosition(node) {
-        if (!node) {
-            relativeEast = 0;
-            relativeNorth = 0;
-            relativeAlt = 0;
-            relativeMainName = "";
-            return;
-        }
-
-        // 获取主机名称
-        var mainName = main_node_name[node.group_id - 1];
-        if (!mainName || mainName === "" || mainName === 0) {
-            relativeEast = 0;
-            relativeNorth = 0;
-            relativeAlt = 0;
-            relativeMainName = "";
-            return;
-        }
-
-        relativeMainName = mainName;
-
-        // 如果是主机本身，坐标为0
-        if (node.objectName === mainName) {
-            relativeEast = 0;
-            relativeNorth = 0;
-            relativeAlt = 0;
-            return;
-        }
-
-        // 从plan_arr中查找主机节点
-        var mainNode = null;
-        for (var i = 0; i < plan_arr.length; i++) {
-            if (plan_arr[i].objectName === mainName) {
-                mainNode = plan_arr[i];
-                break;
-            }
-        }
-
-        if (!mainNode) {
-            relativeEast = 0;
-            relativeNorth = 0;
-            relativeAlt = 0;
-            return;
-        }
-
-        // 获取当前节点位置 - 使用model_x/y/z，这些在移动时会实时更新
-        var nodeX = node.model_x || 0;
-        var nodeY = node.model_y || 0;
-        var nodeZ = node.model_z || 0;
-
-        // 获取主机位置
-        var mainX = mainNode.model_x || 0;
-        var mainY = mainNode.model_y || 0;
-        var mainZ = mainNode.model_z || 0;
-
-        // 参考caculate_pos的计算: -(y差)*间距, (x差)*间距, -(z差)
-        // 东西 = (x差) * 间距
-        // 南北 = -(y差) * 间距 (屏幕Y向下为正，所以取反得到北为正)
-        // 高度 = -(z差)
-        var spacing = Number(input5.text) || 1;
-        relativeEast = (nodeX - mainX) * spacing;
-        relativeNorth = -(nodeY - mainY) * spacing;
-        relativeAlt = (nodeZ - mainZ);
-    }
-
     onUpdate_other_airplane: function(par,set,gr){ // 只在主机更新时,同组的有些模型还没加载出来,没加载出来的模型的位置会遗漏
 
                 if (par === 2 && set === 0) { //只更新位置,所有
                     update_all_pos()
-                    updateGroupCounts()  // 更新各组数量显示
                 } else if (par === 2 && set === 1) {// 是最后一个且是主机
                     for (var j = 0; j < plan_arr.length; j++) {
                         if (plan_arr[j].is_connected && plan_arr[j].set_main) {
                                 set_main_behavior(plan_arr[j],par)
                         }
                     }
-                    updateGroupCounts()  // 更新各组数量显示
                 }
                 if (par === 1) {// 是主机
                     for (var h = 0; h < plan_arr.length; h++) {
@@ -6479,7 +5604,6 @@ Window {
                             set_main_behavior(plan_arr[h],0) // 不发位置
                         }
                     }
-                    updateGroupCounts()  // 更新各组数量显示
                 }
 
     }
@@ -6539,34 +5663,20 @@ Window {
                 return // 如果主机没有连接，直接返回
             }
         }
-
-        // 获取设定高度（基础单位）
-        var baseHeight = Number(input6.text) || 1;
-
         for (var n = 0; n < _sysid_list.length; n++) {
              //   console.log("++++++++++",_sysid_list[n],main_node_name[grp_n - 1],grp_n,idpos_map[_sysid_list[n]][0],idpos_map[_sysid_list[n]][1])
              //   if(modelmp[main_node_name[grp_n - 1]] === 0)return
 
                 if (modelmp[_sysid_list[n]].group_id === modelmp[main_node_name[grp_n - 1]].group_id) { // 说明是同一组
-                    // 获取该飞机的高度倍数
-                    var droneHeightMultiplier = idpos_map[_sysid_list[n]][2] || 1;
-                    // 计算绝对高度 = 倍数 × 设定高度
-                    var absoluteHeight = droneHeightMultiplier * baseHeight;
-
-                    // 发送绝对高度给每个飞机（包括主机）
-                    swarm_send.set_absolute_altitude(_sysid_list[n], absoluteHeight);
-
                     if ( if_main_node(modelmp[_sysid_list[n]].objectName) ) {
-                        // 主机：XY偏移为0
-                        swarm_send.caculate_pos(_sysid_list[n], 0, 0, 0, send_f)
+                        swarm_send.caculate_pos(_sysid_list[n], 0, 0, 0,send_f)
                         continue;
                     }
                     if(send_f)for(var k  = 0; k < 10000000;k++){}// 避免数据拥堵
-                    // 从机：发送XY偏移，Z偏移设为0（因为使用绝对高度）
                     swarm_send.caculate_pos(_sysid_list[n],
                                               -(idpos_map[_sysid_list[n]][1] - idpos_map[main_node_name[grp_n - 1]][1]) * input5.text,
                                               (idpos_map[_sysid_list[n]][0] - idpos_map[main_node_name[grp_n - 1]][0]) * input5.text,
-                                              0, send_f)  // Z偏移设为0，使用绝对高度
+                                              -(idpos_map[_sysid_list[n]][2] - idpos_map[main_node_name[grp_n - 1]][2]),send_f)
                 }
             }
       //  }
@@ -6584,35 +5694,15 @@ Window {
         }
         return false
     }
-    function set_main_color(nodeOrName) {
-        // 支持传入node对象或objectName字符串
-        var targetNode = null;
-        var targetGroupId = 0;
-
-        if (typeof nodeOrName === 'string' || typeof nodeOrName === 'number') {
-            // 传入的是objectName，需要找到对应的node
-            for (var i = 0; i < plan_arr.length; i++) {
-                if (plan_arr[i].objectName === String(nodeOrName)) {
-                    targetNode = plan_arr[i];
-                    targetGroupId = plan_arr[i].group_id;
-                    break;
-                }
-            }
-        } else {
-            targetNode = nodeOrName;
-            targetGroupId = nodeOrName.group_id;
-        }
-
-        if (!targetNode || !targetGroupId) return;
-
-        // 设置主机颜色，并将同组其他模型设为从机颜色
+    function set_main_color(node) {
         for (var n = 0; n < plan_arr.length; n++) {
-            if (plan_arr[n].group_id === targetGroupId) {
-                if (if_main_node(plan_arr[n].objectName)) {
-                    plan_arr[n].is_main = true;
-                } else {
-                    plan_arr[n].is_main = false;
+            if (plan_arr[n].group_id === node.group_id && plan_arr[n].objectName !== node.objectName) { // 只对这一组的颜色进行排他
+                if (if_main_node(plan_arr[n].objectName) ) {
+                    plan_arr[n].is_main = true
+                    continue;
                 }
+                plan_arr[n].is_main = false
+         //       console.log("set main_color ",plan_arr[n].id,plan_arr[n].objectName)
             }
         }
     }
@@ -6635,213 +5725,34 @@ Window {
         }
         return 0
     }
-
-    // 将指定组的模型移动到指定屏幕位置，带碰撞检测
-    function moveGroupToPositionWithCollision(groupId, screenPos) {
-        console.log("moveGroupToPositionWithCollision: groupId=", groupId, "screenPos=", screenPos);
-
-        // 根据屏幕位置计算起始坐标和边界
-        // 位置: 1=左上, 2=右上, 3=左下, 4=右下
-        var startX = 0;
-        var startY = 0;
-        var maxX = 0;
-        var maxY = 0;
-        var halfWidth = Math.floor(control.width / 2 / 40);
-        var halfHeight = Math.floor(control.height / 2 / 40);
-        var fullWidth = Math.floor(control.width / 40) - 1;
-        var fullHeight = Math.floor(control.height / 40) - 1;
-
-        if(screenPos === 1) {
-            startX = 0; startY = 0;
-            maxX = halfWidth - 1; maxY = halfHeight - 1;
-        } else if(screenPos === 2) {
-            startX = halfWidth + 1; startY = 0;
-            maxX = fullWidth; maxY = halfHeight - 1;
-        } else if(screenPos === 3) {
-            startX = 0; startY = halfHeight + 1;
-            maxX = halfWidth - 1; maxY = fullHeight;
-        } else if(screenPos === 4) {
-            startX = halfWidth + 1; startY = halfHeight + 1;
-            maxX = fullWidth; maxY = fullHeight;
-        }
-
-        console.log("区域范围: startX=", startX, "startY=", startY, "maxX=", maxX, "maxY=", maxY);
-
-        // 收集该组的所有模型
-        var groupModels = [];
-        for(var i = 0; i < plan_arr.length; i++) {
-            if(plan_arr[i].group_id === groupId) {
-                groupModels.push(plan_arr[i]);
-            }
-        }
-
-        // 逐个放置模型，检测碰撞
-        var xx = startX;
-        var yy = startY;
-
-        for(var j = 0; j < groupModels.length; j++) {
-            var model = groupModels[j];
-
-            // 找到一个没有碰撞的位置
-            while(transform_crush(xx, yy, groupId) && xx <= maxX) {
-                xx++;
-                if(xx > maxX) {
-                    xx = startX;
-                    yy++;
-                    if(yy > maxY) {
-                        console.log("警告：区域内没有足够空间放置模型");
-                        break;
-                    }
-                }
-            }
-
-            console.log("放置模型", model.objectName, "到位置:", xx, yy);
-            screen_pos_to_world_pos(xx, yy, model);
-
-            // 移动到下一个位置
-            xx++;
-            if(xx > maxX) {
-                xx = startX;
-                yy++;
-            }
-        }
-    }
-
-    // 直接根据组号移动该组所有模型到指定屏幕位置
-    function moveGroupModels(groupId, screenPos, totalGroups) {
-        var xx = 0;
-        var yy = 0;
-        var mstart = 0;
-        var lim = 0;
-
-        console.log("moveGroupModels: groupId=", groupId, "screenPos=", screenPos, "totalGroups=", totalGroups);
-
-        // 根据屏幕位置和总组数计算起始坐标
-        // 位置: 1=左上, 2=右上, 3=左下, 4=右下
-        if(screenPos === 1) {
-            xx = 0;
-            yy = 0;
-            mstart = 0;
-            lim = Math.floor(control.width / 2 / 40) - 1;
-        } else if(screenPos === 2) {
-            mstart = Math.floor(control.width / 2 / 40) + 1;
-            xx = mstart;
-            yy = 0;
-            lim = Math.floor(control.width / 40) - 2;
-        } else if(screenPos === 3) {
-            xx = 0;
-            yy = Math.floor(control.height / 2 / 40) + 1;
-            mstart = 0;
-            lim = Math.floor(control.width / 2 / 40) - 1;
-        } else if(screenPos === 4) {
-            mstart = Math.floor(control.width / 2 / 40) + 1;
-            xx = mstart;
-            yy = Math.floor(control.height / 2 / 40) + 1;
-            lim = Math.floor(control.width / 40) - 2;
-        }
-
-        console.log("位置参数: xx=", xx, "yy=", yy, "lim=", lim, "mstart=", mstart);
-
-        // 直接根据group_id移动模型
-        for(var i = 0; i < plan_arr.length; i++) {
-            if(plan_arr[i].group_id === groupId) {
-                if(xx <= lim) {
-                    screen_pos_to_world_pos(xx, yy, plan_arr[i]);
-                    xx++;
-                } else {
-                    yy++;
-                    xx = mstart;
-                    screen_pos_to_world_pos(xx, yy, plan_arr[i]);
-                    xx++;
-                }
-                console.log("移动模型", plan_arr[i].objectName, "到位置:", xx-1, yy);
-            }
-        }
-    }
-
     function move_model(n,sumn) {// n 指屏幕位置
         var xx = 0
         var yy = 0
         var mstart = 0
         var lim = 0
 
-        console.log("move_model调用: n=", n, "sumn=", sumn);
-
-        if (sumn === 2) {
-            // 分成2组：左右分布
-            if (n === 1) {
-                // 第一组：左半边
-                xx = 0;
-                yy = 0;
-                lim = Math.floor(control.width / 2 / 40) - 1; // 左半边的列数限制
-            } else if (n === 2) {
-                // 第二组：右半边
-                mstart = Math.floor(control.width / 2 / 40) + 1; // 从中线右侧开始
-                xx = mstart;
-                yy = 0;
-                lim = Math.floor(control.width / 40) - 2; // 右边界留空间
-            }
-        } else if (sumn === 3) {
-            // 分成3组：上左、上右、下左
-            if (n === 1) {
-                // 第一组：左上角
-                xx = 0;
-                yy = 0;
-                lim = Math.floor(control.width / 2 / 40) - 1;
-            } else if (n === 2) {
-                // 第二组：右上角
-                mstart = Math.floor(control.width / 2 / 40) + 1;
-                xx = mstart;
-                yy = 0;
-                lim = Math.floor(control.width / 40) - 2;
-            } else if (n === 3) {
-                // 第三组：左下角（靠左侧）
-                xx = 0; // 从最左边开始
-                yy = Math.floor(control.height / 2 / 40) + 1; // 从中线下方开始
-                lim = Math.floor(control.width / 2 / 40) - 1; // 限制在左半边
-                mstart = 0; // 换行时回到最左边
-            }
-        } else if (sumn === 4) {
-            // 分成4组：四个象限
-            if (n === 1) {
-                // 第一组：左上角
-                xx = 0;
-                yy = 0;
-                lim = Math.floor(control.width / 2 / 40) - 1;
-            } else if (n === 2) {
-                // 第二组：右上角
-                mstart = Math.floor(control.width / 2 / 40) + 1;
-                xx = mstart;
-                yy = 0;
-                lim = Math.floor(control.width / 40) - 2;
-            } else if (n === 3) {
-                // 第三组：左下角
-                xx = 0;
-                yy = Math.floor(control.height / 2 / 40) + 1;
-                lim = Math.floor(control.width / 2 / 40) - 1;
-            } else if (n === 4) {
-                // 第四组：右下角
-                mstart = Math.floor(control.width / 2 / 40) + 1;
-                xx = mstart;
-                yy = Math.floor(control.height / 2 / 40) + 1;
-                lim = Math.floor(control.width / 40) - 2;
-            }
+        if (sumn === 2 && n === 1) lim = (control.width -20) / 80 // 第一组的界限
+        if ((sumn === 2 && n === 2) || (sumn === 4 && n === 2)) {
+            mstart = (control.width) / 80 + 0.5;//  为啥+0.5  已经yy为啥+0.2  是为了微调   使得摆放的更合适好看
+            lim = (control.width -20) / 40;
+            xx = mstart
         }
-
-        console.log("位置参数: xx=", xx, "yy=", yy, "lim=", lim, "mstart=", mstart);
-
+        if (sumn === 4 && n === 3) {lim = (control.width -20) / 80; yy = (control.height - 20) / 80 +0.2}
+        if (sumn === 4 && n === 4) {mstart = (control.width) / 80 + 0.5; lim = (control.width -20) / 40; xx = mstart;yy = (control.height - 20) / 80 + 0.2}
+     //   console.log("move ",group_num,n,xx,yy,lim,trans_pos_to_grp(n))
         for (var i = 0; i < plan_arr.length; i++) {
-            if (plan_arr[i].group_id === Number(trans_pos_to_grp(n))) {
-                if(xx < lim) {
-                    screen_pos_to_world_pos(xx, yy, plan_arr[i]);
-                    xx++;
+            if (plan_arr[i].group_id === Number(trans_pos_to_grp(n))) { //这个位置 转换成组别
+     //           console.log(xx,yy,lim)
+                if(xx < (lim-0.15)) {
+                    screen_pos_to_world_pos(xx,yy,plan_arr[i])
+                    xx++
                 } else {
-                    yy++;
-                    xx = mstart;
-                    screen_pos_to_world_pos(xx, yy, plan_arr[i]);
-                    xx++;
+                    yy++
+                    xx = mstart
+                    screen_pos_to_world_pos(xx,yy,plan_arr[i])
+                    xx++
                 }
-                console.log("放置模型", plan_arr[i].objectName, "在位置:", xx-1, yy);
+                console.log("fenzu",group_num,n,xx,yy,lim)
             }
         }
     }
@@ -7063,16 +5974,16 @@ Window {
             canv3.visible = true
             if(grp_has_pos(1) === false) {
                 grp_pos_mp[grp] = 1
-                move_model(1, group_num)
+                move_model(1,4)
             } else if (grp_has_pos(2) === false) {
                 grp_pos_mp[grp] = 2
-                move_model(2, group_num)
+                move_model(2,4)
             } else if (grp_has_pos(3) === false) {
                 grp_pos_mp[grp] = 3
-                move_model(3, group_num)
+                move_model(3,4)
             } else if (grp_has_pos(4) === false) {
                 grp_pos_mp[grp] = 4
-                move_model(4, group_num)
+                move_model(4,4)
             }
          /*   if(grp === 1)
                 move_model(1,2)
@@ -7274,13 +6185,7 @@ Window {
             plan_arr.push(plan_id[i])
            // console.log(plan_id[i].objectName,plan_id[i].visible,plan_id[i].pickable)
         }
-        // 刷新高度调整框
-        updateGroupCounts();
-        planArrChanged();
     }
-
-    // 信号：plan_arr 变化时触发
-    signal planArrChanged()
 
     function plan_to_out_main(node) {
         for (var i = 0; i < plan_id.length; i++) {
@@ -7304,10 +6209,10 @@ Window {
             });
             return;
         }*/
-
+        
         performMove(xx, yy, thisnode);
     }
-
+    
     function performMove(xx, yy, thisnode) {
         // 实际执行移动的函数
         thisnode.visible = false
@@ -7336,41 +6241,41 @@ Window {
 
         var map_from_1 = control.mapFrom3DScene(thisnode.scenePosition) // 屏幕坐标
       //  console.log("初始屏幕坐标：x=", map_from_1.x, "y=", map_from_1.y, "z=", map_from_1.z);
-
+        
         // 确保屏幕坐标有效
         if (isNaN(map_from_1.x) || isNaN(map_from_1.y)) {
            // console.log("警告：无效的屏幕坐标，跳过移动");
             return;
         }
-
+        
         var x_off = 0
         var y_off = 0
         var pos_temp = 0
         var map_to = 0
         var maxIterations = 100; // 添加最大迭代次数限制，避免无限循环
         var iterations = 0;
-
+        
         while((Math.abs(xx - map_from_1.x) > 1 || Math.abs(yy - map_from_1.y) > 1) && iterations < maxIterations) {
             x_off = xx - map_from_1.x
             y_off = yy - map_from_1.y
             //    console.log(x_off,y_off,map_from_1.x,map_from_1.y)
             pos_temp = Qt.vector3d((map_from_1.x + x_off), (map_from_1.y + y_off), map_from_1.z);
             map_to = control.mapTo3DScene(pos_temp) // 世界坐标
-
+            
             // 检查世界坐标是否有效
             if (!isNaN(map_to.x) && !isNaN(map_to.y)) {
                 thisnode.x = map_to.x
                 thisnode.y = map_to.y
             }
-
+            
             map_from_1 = control.mapFrom3DScene(thisnode.scenePosition) // 屏幕坐标
             iterations++;
         }
-
+        
         if (iterations >= maxIterations) {
            // console.log("警告：达到最大迭代次数，可能未完成精确移动");
         }
-
+        
         // 只有在坐标有效时才更新model_x和model_y
         if (!isNaN(map_from_1.x) && !isNaN(map_from_1.y)) {
             myIntx = (map_from_1.x - 20) % 40 > 25 ? (map_from_1.x - 20) / 40 + 1 : (map_from_1.x - 20) / 40
@@ -7699,7 +6604,7 @@ Window {
 
             // 填充四个顶点
 
-            //console.log(size, height, x_0,y_0)
+            console.log(size, height, x_0,y_0)
             index += 4
             screen_pos_to_world_pos(x_0 + height - 1,y_0 ,form_arr[0])
             screen_pos_to_world_pos(x_0,y_0 + height - 1,form_arr[1])
@@ -7726,7 +6631,7 @@ Window {
                 screen_pos_to_world_pos(x_0 + height - 1 + i,y_0 + size - 1 - i,form_arr[index]) // 右下边
                 index++;
             }
-            //console.log("neibu",index,n)
+            console.log("neibu",index,n)
             // 填充内部   实际走不到填充的部分
             for ( i = 1; i < size - 1; ++i) {
                 for (var j = 1; j < size - 1; ++j) {

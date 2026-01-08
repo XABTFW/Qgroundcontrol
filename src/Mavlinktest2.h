@@ -58,6 +58,8 @@ private slots:
 signals:
     void            valueChanged        ();
     void selectedChanged                ();
+    // 集群操作确认信号
+    void swarmOperationAckReceived(int sysId, int opType, int result, int oldValue, int newValue, QString message);
 
 private:
     bool _processANSItext(QByteArray &line);
