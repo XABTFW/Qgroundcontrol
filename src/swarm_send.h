@@ -24,6 +24,7 @@ public:
     Q_INVOKABLE void caculate_pos(int sysid,float x,float y,float z);
     Q_INVOKABLE void set_main_airplane(int sysid, int grp_id, float x,float y,float z);
     Q_INVOKABLE void store_airplane_group(int sysid, int group_id, bool flag = false, bool set_as_follower = false);
+    Q_INVOKABLE void set_absolute_altitude(int sysid, float altitude);  // 设置绝对高度
 
 
   //  Vehicle*      _vehicle;
