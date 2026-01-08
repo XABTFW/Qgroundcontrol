@@ -354,6 +354,7 @@
         <file alias="Viewer3D/Viewer3DProgressBar.qml">src/Viewer3D/Viewer3DQml/Viewer3DProgressBar.qml</file>
         <file alias="QGroundControl/FlightDisplay/FlyViewTopRightPanel.qml">src/FlightDisplay/FlyViewTopRightPanel.qml</file>
         <file>Myswarm.qml</file>
+        <file>SwarmOperationPopup.qml</file>
         <file alias="MavlinkTestPage.qml">src/AnalyzeView/MAVLinkTestPage.qml</file>
         <file alias="swarm.qml">src/AnalyzeView/swarm.qml</file>
     </qresource>

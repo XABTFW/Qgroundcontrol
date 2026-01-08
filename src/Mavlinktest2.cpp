@@ -3,6 +3,7 @@
 //#include "UAS.h"
 #include "MAVLinkInspectorController.h"
 #include "mavlink_msg_uav_info.h"
+#include "mavlink_msg_swarm_operation_ack.h"
 #include "MultiVehicleManager.h"
 #include <QtCharts/QLineSeries>
 #include<iostream>
@@ -130,6 +131,51 @@ Mavlinktest2::_receiveMessage(LinkInterface*, mavlink_message_t message)
     //     qDebug()<<"message.msgid"<<MAVLINK_MSG_ID_ALTITUDE<<__LINE__;
     // }
     //  qDebug()<<message.msgid<<MAVLINK_MSG_ID_TEST_MAVLINK;
+
+    // 处理SWARM_OPERATION_ACK消息
+    if(message.msgid == MAVLINK_MSG_ID_SWARM_OPERATION_ACK)
+    {
+        mavlink_swarm_operation_ack_t ack;
+        mavlink_msg_swarm_operation_ack_decode(&message, &ack);
+
+        // 格式化消息文本
+        QString msgText;
+        if (ack.result == 0) { // SUCCESS
+            if (ack.operation_type == 1) { // GROUP_CHANGE
+                msgText = QString("飞机%1: 组号从%2切换到%3 成功")
+                          .arg(ack.target_system)
+                          .arg(ack.old_value)
+                          .arg(ack.new_value);
+            } else if (ack.operation_type == 2) { // LEADER_CHANGE
+                QString oldRole = (ack.old_value == 1) ? "主机" : "从机";
+                QString newRole = (ack.new_value == 1) ? "主机" : "从机";
+                msgText = QString("飞机%1: 角色从%2切换到%3 成功")
+                          .arg(ack.target_system)
+                          .arg(oldRole)
+                          .arg(newRole);
+            }
+        } else { // FAILED
+            if (ack.operation_type == 1) {
+                msgText = QString("飞机%1: 组号切换失败").arg(ack.target_system);
+            } else if (ack.operation_type == 2) {
+                msgText = QString("飞机%1: 角色切换失败").arg(ack.target_system);
+            }
+        }
+
+        qDebug() << "[Mavlinktest2] 收到SWARM_OPERATION_ACK:" << msgText;
+
+        // 发送信号通知QML
+        emit swarmOperationAckReceived(
+            ack.target_system,
+            ack.operation_type,
+            ack.result,
+            ack.old_value,
+            ack.new_value,
+            msgText
+        );
+
+        return;
+    }
 
     if(message.msgid==MAVLINK_MSG_ID_UAV_INFO)
     {
