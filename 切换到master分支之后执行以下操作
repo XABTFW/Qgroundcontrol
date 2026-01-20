@@ -4,3 +4,4 @@ export https_proxy=http://127.0.0.1:7897
 下载缺失的子模块
 git submodule update --init --recursive
 然后把自定义mavlink包切换了就可以构建成功了
+把gps.cc的也替换了
