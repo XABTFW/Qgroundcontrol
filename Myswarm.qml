@@ -177,7 +177,7 @@ Window {
     // 根据vehicleId获取组ID
     function getGroupIdByVehicleId(vehicleId) {
         for (var i = 0; i < plan_arr.length; i++) {
-            if (plan_arr[i].objectName == vehicleId.toString() || 
+            if (plan_arr[i].objectName == vehicleId.toString() ||
                 parseInt(plan_arr[i].objectName) === vehicleId) {
                 // 检查是否是主机
                 if (plan_arr[i].is_main || plan_arr[i].set_main === 1) {
@@ -4463,7 +4463,7 @@ Window {
                                     } else { // 执行分组
                                         // 先清除所有主机状态
                                         clearAllMainStatus();
-                                        
+
                                         if (input3.text === "1") {   //
                                             canv.visible = false
                                             canv2.visible = false
@@ -4961,7 +4961,7 @@ Window {
 
                                     // 清空旧的位置映射，重新分配
                                     grp_pos_mp = {};
-                                    
+
                                     // 根据组数分配位置
                                     // 2组：位置1和2（左右）
                                     // 3组：位置1、2、3（左上、右上、左下）
@@ -5501,20 +5501,20 @@ Window {
                 width: 380
                 height: 200
                 closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-                
+
                 property int targetGroupId: 1
-                
+
                 background: Rectangle {
                     color: "#2e3440"
                     border.color: primaryColor
                     border.width: 2
                     radius: 12
                 }
-                
+
                 contentItem: Column {
                     anchors.fill: parent
                     spacing: 0
-                    
+
                     // 标题栏
                     Rectangle {
                         width: parent.width
@@ -5535,34 +5535,34 @@ Window {
                             color: primaryColor
                         }
                     }
-                    
+
                     // 内容区域
                     Item {
                         width: parent.width
                         height: parent.height - 45 - 55
-                        
+
                         Column {
                             anchors.centerIn: parent
                             spacing: 15
-                            
+
                             Text {
                                 text: "已选择 " + heightSelectedDrones.length + " 架飞机"
                                 font.pixelSize: 14
                                 color: "#88c0d0"
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
-                            
+
                             Row {
                                 spacing: 15
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                
+
                                 Text {
                                     text: "绝对高度:"
                                     font.pixelSize: 14
                                     color: "#d8dee9"
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
-                                
+
                                 TextField {
                                     id: heightInput
                                     width: 100
@@ -5579,7 +5579,7 @@ Window {
                                         radius: 6
                                     }
                                 }
-                                
+
                                 Text {
                                     text: "米"
                                     font.pixelSize: 14
@@ -5589,22 +5589,22 @@ Window {
                             }
                         }
                     }
-                    
+
                     // 按钮区域
                     Item {
                         width: parent.width
                         height: 55
-                        
+
                         Row {
                             anchors.centerIn: parent
                             spacing: 20
-                            
+
                             Button {
                                 width: 90
                                 height: 34
                                 text: "确定"
                                 background: Rectangle {
-                                    color: parent.pressed ? Qt.darker(secondaryColor, 1.2) : 
+                                    color: parent.pressed ? Qt.darker(secondaryColor, 1.2) :
                                            parent.hovered ? Qt.lighter(secondaryColor, 1.1) : secondaryColor
                                     radius: 6
                                 }
@@ -5639,13 +5639,13 @@ Window {
                                     setHeightDialog.close();
                                 }
                             }
-                            
+
                             Button {
                                 width: 90
                                 height: 34
                                 text: "取消"
                                 background: Rectangle {
-                                    color: parent.pressed ? Qt.darker("#4c566a", 1.2) : 
+                                    color: parent.pressed ? Qt.darker("#4c566a", 1.2) :
                                            parent.hovered ? Qt.lighter("#4c566a", 1.1) : "#4c566a"
                                     radius: 6
                                 }
@@ -5823,7 +5823,7 @@ Window {
                                                         // 计算刻度间隔，太密集时只显示部分刻度
                                                         property int scaleStep: scaleRange > 20 ? 5 : (scaleRange > 10 ? 2 : 1)
                                                         property bool showLabel: (Math.abs(scaleValue) % scaleStep === 0) || scaleValue === 0
-                                                        
+
                                                         x: 0
                                                         y: yPos + 5
                                                         width: 30
@@ -5874,7 +5874,7 @@ Window {
                                                         property real droneRelHeight: droneAbsHeight - mainHeight
                                                         property bool isSelected: heightSelectedDrones.indexOf(droneNode) >= 0
                                                         property bool isDragging: false
-                                                        
+
                                                         width: 38
                                                         height: parent.height
 
@@ -5900,12 +5900,12 @@ Window {
                                                                 radius: 3
                                                                 x: 2
                                                                 y: Math.max(0, Math.min(parent.height - height - 5, ((scaleMax - droneRelHeight) / scaleRange) * (parent.height - 10) + 5 - height/2))
-                                                                
-                                                                color: isSelected ? Qt.darker(droneNode && (droneNode.is_main || droneNode.set_main) ? "#bf616a" : 
+
+                                                                color: isSelected ? Qt.darker(droneNode && (droneNode.is_main || droneNode.set_main) ? "#bf616a" :
                                                                     (groupId === 1 ? modelColor1 : (groupId === 2 ? modelColor2 : (groupId === 3 ? modelColor3 : modelColor4))), 1.3) :
-                                                                    (droneNode && (droneNode.is_main || droneNode.set_main) ? "#bf616a" : 
+                                                                    (droneNode && (droneNode.is_main || droneNode.set_main) ? "#bf616a" :
                                                                     (groupId === 1 ? modelColor1 : (groupId === 2 ? modelColor2 : (groupId === 3 ? modelColor3 : modelColor4))))
-                                                                
+
                                                                 border.color: isSelected ? "white" : "transparent"
                                                                 border.width: isSelected ? 2 : 0
 
@@ -5959,19 +5959,19 @@ Window {
                                                                             var newY = droneIcon.y;
                                                                             var newRelH = scaleMax - ((newY + droneIcon.height/2 - 5) / (droneColumn.height - 10)) * scaleRange;
                                                                             newRelH = Math.round(newRelH * 10) / 10;
-                                                                            
+
                                                                             // 计算新的绝对高度
                                                                             var newAbsH = mainHeight + newRelH;
-                                                                            
+
                                                                             // 存储绝对高度
                                                                             setDroneAbsoluteHeight(droneNode.objectName, newAbsH, groupId);
                                                                             droneNode.model_z = newRelH;
-                                                                            
+
                                                                             // 发送绝对高度给飞机
                                                                             if (droneNode.is_connected) {
                                                                                 swarm_send.set_absolute_altitude(droneNode.objectName, newAbsH);
                                                                             }
-                                                                            
+
                                                                             console.log("拖动设置飞机", droneNode.objectName, "绝对高度为", newAbsH, "米, 相对高度", newRelH, "米");
                                                                             updateGroupScale(groupId);
                                                                         }
@@ -6004,7 +6004,7 @@ Window {
                                     function onGroup3CountChanged() { if (groupId === 3) groupHeightItem.updateGroupDrones(); }
                                     function onGroup4CountChanged() { if (groupId === 4) groupHeightItem.updateGroupDrones(); }
                                     function onPlanArrChanged() { groupHeightItem.updateGroupDrones(); }
-                                    function onGroupMainHeightChanged() { 
+                                    function onGroupMainHeightChanged() {
                                         groupHeightItem.mainHeight = groupMainHeight[groupId.toString()] || 0;
                                         groupHeightItem.updateGroupDrones();
                                     }
@@ -6585,7 +6585,7 @@ Window {
         var newHeights = JSON.parse(JSON.stringify(droneAbsoluteHeight));
         newHeights[objectName] = height;
         droneAbsoluteHeight = newHeights;
-        
+
         // 标记该组已手动设置过高度
         var newManual = JSON.parse(JSON.stringify(groupHeightManuallySet));
         newManual[groupId.toString()] = true;
@@ -6604,7 +6604,7 @@ Window {
         var maxH = 5;
         var minH = -5;
         var mainH = groupMainHeight[groupId.toString()] || 0;
-        
+
         for (var i = 0; i < plan_arr.length; i++) {
             if (plan_arr[i].group_id === groupId && plan_arr[i].visible) {
                 var absH = getDroneAbsoluteHeight(plan_arr[i].objectName, groupId);
@@ -6613,7 +6613,7 @@ Window {
                 if (relH < minH) minH = Math.floor(relH) - 1;
             }
         }
-        
+
         var newMax = JSON.parse(JSON.stringify(groupScaleMax));
         var newMin = JSON.parse(JSON.stringify(groupScaleMin));
         newMax[groupId.toString()] = maxH;
@@ -6627,7 +6627,7 @@ Window {
         var newMainH = JSON.parse(JSON.stringify(groupMainHeight));
         newMainH[groupId.toString()] = height;
         groupMainHeight = newMainH;
-        
+
         // 如果该组没有手动设置过高度，则给所有从机设置相同的绝对高度
         if (!groupHeightManuallySet[groupId.toString()]) {
             for (var i = 0; i < plan_arr.length; i++) {
@@ -6635,7 +6635,7 @@ Window {
                     var newHeights = JSON.parse(JSON.stringify(droneAbsoluteHeight));
                     newHeights[plan_arr[i].objectName] = height;
                     droneAbsoluteHeight = newHeights;
-                    
+
                     // 发送绝对高度给飞机
                     if (plan_arr[i].is_connected) {
                         swarm_send.set_absolute_altitude(plan_arr[i].objectName, height);
@@ -6643,7 +6643,7 @@ Window {
                 }
             }
         }
-        
+
         updateGroupScale(groupId);
         console.log("设置第" + groupId + "组主机高度为: " + height + "米");
     }
@@ -7717,10 +7717,10 @@ Window {
     // 返回 {x: 起始X, y: 起始Y, areaWidth: 区域宽度, areaHeight: 区域高度}
     function getFormationAreaCenter(groupId, formationWidth, formationHeight) {
         var areaLeft = 0, areaRight = 0, areaTop = 0, areaBottom = 0;
-        
+
         // 获取该组对应的位置
         var pos = grp_pos_mp[groupId] || 0;
-        
+
         // 如果只有一个组或者找不到位置映射，使用整个区域
         if (group_num === 1 || pos === 0) {
             areaLeft = 0;
@@ -7782,23 +7782,23 @@ Window {
                 areaBottom = Math.floor(control.height / 40) - 1;
             }
         }
-        
+
         var areaWidth = areaRight - areaLeft + 1;
         var areaHeight = areaBottom - areaTop + 1;
-        
+
         // 计算居中的起始位置
         var startX = areaLeft + Math.floor((areaWidth - formationWidth) / 2);
         var startY = areaTop + Math.floor((areaHeight - formationHeight) / 2);
-        
+
         // 确保起始位置不小于区域左上角
         if (startX < areaLeft) startX = areaLeft;
         if (startY < areaTop) startY = areaTop;
-        
+
         console.log("getFormationAreaCenter: groupId=", groupId, "pos=", pos, "group_num=", group_num);
         console.log("区域: left=", areaLeft, "right=", areaRight, "top=", areaTop, "bottom=", areaBottom);
         console.log("队形尺寸: width=", formationWidth, "height=", formationHeight);
         console.log("居中起始位置: startX=", startX, "startY=", startY);
-        
+
         return {x: startX, y: startY, areaWidth: areaWidth, areaHeight: areaHeight};
     }
 
@@ -8024,9 +8024,12 @@ Window {
 
         var n = form_arr.length;
 
-        var radius = n / 2; // 半径不能太小
-        if(radius < 2) radius = 2
-        if(radius >= 8) radius = 8
+        // 调整半径计算，使圆形编队的间距与正方形编队一致
+        // 圆周长 = 2πr，飞机数量 = n，间距应为 1（与正方形一致）
+        // 因此 r = n / (2π)
+        var radius = n / (2 * Math.PI);
+        if(radius < 1) radius = 1      // 最小半径
+        if(radius >= 4) radius = 4     // 最大半径限制
 
         // 圆形的直径（队形尺寸）
         var diameter = Math.ceil(radius * 2) + 1;
@@ -8039,12 +8042,16 @@ Window {
         var angleStep = 2 * Math.PI / n; // 每个点之间的角度差
         var index = 0
 
+        // 圆心位置
+        var centerX = x_1 + radius;
+        var centerY = y_1 + radius;
+
         for (i = 0; i < n; ++i) {
             var angle = i * angleStep;
-            var x = radius + radius * Math.cos(angle);
-            var y = radius + radius * Math.sin(angle);
+            var x = centerX + radius * Math.cos(angle);
+            var y = centerY + radius * Math.sin(angle);
             if(index >= n) break
-            screen_pos_to_world_pos(x_1 + x,y_1 + y,form_arr[index++])
+            screen_pos_to_world_pos(x, y, form_arr[index++])
         }
 
         send_all_airplane_pos(input4.text,0)
