@@ -5490,26 +5490,6 @@ Window {
 
                         RowLayout {
                         CustomButton {
-                            text: "设置高度"
-                            Layout.columnSpan: 2
-                            Layout.fillWidth: true
-                            color: root.primaryColor
-                            onClicked: {
-                                if (!mouse_area.pickNode) {
-                                    return
-                                }
-
-                                mouse_area.pickNode.model_z = Number(input6.text)
-                                if (mouse_area.pickNode.is_connected) {
-                                    idpos_map[mouse_area.pickNode.objectName][2] = Number(input6.text)
-                                }
-
-                                show_position(mouse_area.pickNode) // 界面显示数据
-                                updateRelativePosition(mouse_area.pickNode)  // 更新相对坐标
-                                send_all_airplane_pos(mouse_area.pickNode.group_id, 0)
-                            }
-                        }
-                        CustomButton {
                             text: "选定主机"
                             Layout.columnSpan: 2
                             Layout.fillWidth: true
@@ -5589,9 +5569,9 @@ Window {
                 right: parent.right
                 bottom: bottomBar.top
                 margins: 12
-                bottomMargin: 6
+                bottomMargin: 0
             }
-            height: 150
+            height: 270
             color: "transparent"
 
             // 设置绝对高度弹窗 - FUI风格
@@ -5825,7 +5805,7 @@ Window {
                     Row {
                         id: droneHeightContent
                         spacing: 0
-                        height: droneStatusFlickable.height > 0 ? droneStatusFlickable.height : 130
+                        height: droneStatusFlickable.height > 0 ? droneStatusFlickable.height : 280
 
                         // 动态生成各组
                         Repeater {
@@ -6093,9 +6073,69 @@ Window {
                                                                     anchors.topMargin: 1
                                                                     anchors.horizontalCenter: parent.horizontalCenter
                                                                     text: droneAbsHeight.toFixed(1) + "m"
-                                                                    font.pixelSize: 6
+                                                                    font.pixelSize: 9
                                                                     font.family: "Monospace"
                                                                     color: "#A0A0A0"  // 明确的灰色
+                                                                }
+
+                                                                // 电池电量显示
+                                                                Text {
+                                                                    id: batteryText
+                                                                    anchors.top: parent.bottom
+                                                                    anchors.topMargin: 12
+                                                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                                                    property var currentVehicle: {
+                                                                        if (!droneNode || !droneNode.is_connected) return null;
+                                                                        var vehicleId = parseInt(droneNode.objectName);
+                                                                        if (QGroundControl.multiVehicleManager.my_vehicles) {
+                                                                            return QGroundControl.multiVehicleManager.my_vehicles[vehicleId];
+                                                                        }
+                                                                        var vehicles = QGroundControl.multiVehicleManager.vehicles;
+                                                                        for (var i = 0; i < vehicles.count; i++) {
+                                                                            var v = vehicles.get(i);
+                                                                            if (v && v.id === vehicleId) return v;
+                                                                        }
+                                                                        return null;
+                                                                    }
+                                                                    property real batteryPercent: {
+                                                                        if (!currentVehicle) return -1;
+                                                                        if (currentVehicle.battery && currentVehicle.battery.percentRemaining) {
+                                                                            var val = currentVehicle.battery.percentRemaining.value;
+                                                                            if (val !== undefined && val >= 0) return val;
+                                                                        }
+                                                                        if (currentVehicle.batteries && currentVehicle.batteries.count > 0) {
+                                                                            var battery = currentVehicle.batteries.get(0);
+                                                                            if (battery && battery.percentRemaining) {
+                                                                                var val2 = battery.percentRemaining.value;
+                                                                                if (val2 !== undefined && val2 >= 0) return val2;
+                                                                            }
+                                                                        }
+                                                                        return -1;
+                                                                    }
+
+                                                                    text: batteryPercent >= 0 ? batteryPercent.toFixed(0) + "%" : (droneNode && droneNode.is_connected ? "N/A" : "--")
+                                                                    font.pixelSize: 10
+                                                                    font.family: "Monospace"
+                                                                    font.bold: true
+                                                                    color: {
+                                                                        if (batteryPercent >= 0) {
+                                                                            if (batteryPercent > 50) return "#00FF88";
+                                                                            else if (batteryPercent > 20) return "#FFD700";
+                                                                            else return "#FF3366";
+                                                                        }
+                                                                        return "#A0A0A0";
+                                                                    }
+
+                                                                    // 定时刷新电池数据
+                                                                    Timer {
+                                                                        interval: 1000
+                                                                        running: droneNode && droneNode.is_connected
+                                                                        repeat: true
+                                                                        onTriggered: {
+                                                                            batteryText.currentVehicle = batteryText.currentVehicle;
+                                                                        }
+                                                                    }
                                                                 }
 
                                                                 MouseArea {
