@@ -44,6 +44,7 @@ Item {
     }
 
     QGCColoredImage {
+        id:                 signalIcon
         source:             getIcon()
         fillMode:           Image.PreserveAspectFit
         anchors.fill:       parent

@@ -23,8 +23,7 @@ void Swarm::sendGpsRawInt(uint64_t time_usec, uint8_t fix_type, int32_t lat, int
 {
     mavlink_message_t msg;
     mavlink_msg_gps_raw_int_pack(1, 1, &msg, time_usec, fix_type, lat, lon, alt, eph, epv, vel, cog, satellites_visible, alt_ellipsoid, h_acc, v_acc, vel_acc, hdg_acc, yaw);
-    // 通过 QGC 或其他地面站发送数据
-    qDebug() << "Sending GPS data: " << msg.msgid;
+    // 性能优化：移除调试日志
 }
 
 void Swarm::handleGpsData(const mavlink_message_t &msg)

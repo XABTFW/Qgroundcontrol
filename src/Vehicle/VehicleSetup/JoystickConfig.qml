@@ -65,7 +65,7 @@ SetupPage {
                 width:          parent.width
                 Component.onCompleted: {
                     if (_activeJoystick) {
-                        if (_activeJoystick.axisCount == 0) {
+                        if (_activeJoystick.axisCount === 0) {
                             currentIndex = _allowJoystickSelection ? 0 : 1
                         } else {
                             currentIndex = _activeJoystick.calibrated ? 0 : 2

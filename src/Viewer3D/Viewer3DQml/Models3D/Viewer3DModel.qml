@@ -5,7 +5,6 @@ import QtQuick.Window
 import QtPositioning
 
 import Viewer3D
-import Viewer3D.Models3D.Drones
 import Viewer3D.Models3D
 import QGroundControl.Viewer3D
 
