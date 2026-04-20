@@ -105,7 +105,8 @@ void PlanManager::writeMissionItems(const QList<MissionItem*>& missionItems)
 /// This begins the write sequence with the vehicle. This may be called during a retry.
 void PlanManager::_writeMissionCount(void)
 {
-    qCDebug(PlanManagerLog) << QStringLiteral("_writeMissionCount %1 count:_retryCount").arg(_planTypeString()) << _writeMissionItems.count() << _retryCount;
+    // 性能优化：移除频繁的调试输出
+    // qCDebug(PlanManagerLog) << QStringLiteral("_writeMissionCount %1 count:_retryCount").arg(_planTypeString()) << _writeMissionItems.count() << _retryCount;
 
     SharedLinkInterfacePtr sharedLink = _vehicle->vehicleLinkManager()->primaryLink().lock();
     if (sharedLink) {
@@ -434,7 +435,8 @@ void PlanManager::_handleMissionItem(const mavlink_message_t& message)
         }
     }
 
-    qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionItem %1 seq:command:current:ardupilotHomePositionUpdate").arg(_planTypeString()) << seq << command << isCurrentItem << ardupilotHomePositionUpdate;
+    // 性能优化：移除频繁的调试输出
+    // qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionItem %1 seq:command:current:ardupilotHomePositionUpdate").arg(_planTypeString()) << seq << command << isCurrentItem << ardupilotHomePositionUpdate;
 
     if (ardupilotHomePositionUpdate) {
         QGeoCoordinate newHomePosition(param5, param6, param7);
@@ -509,7 +511,8 @@ void PlanManager::_handleMissionRequest(const mavlink_message_t& message)
         return;
     }
 
-    qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionRequest %1 sequenceNumber").arg(_planTypeString()) << missionRequestSeq;
+    // 性能优化：移除频繁的调试输出
+    // qCDebug(PlanManagerLog) << QStringLiteral("_handleMissionRequest %1 sequenceNumber").arg(_planTypeString()) << missionRequestSeq;
 
     if (missionRequestSeq > _writeMissionItems.count() - 1) {
         _sendError(RequestRangeError, tr("Vehicle requested item outside range, count:request %1:%2. Send to Vehicle failed.").arg(_writeMissionItems.count()).arg(missionRequestSeq));
@@ -650,20 +653,18 @@ void PlanManager::_mavlinkMessageReceived(const mavlink_message_t& message)
 {
     switch (message.msgid) {
     case MAVLINK_MSG_ID_MISSION_COUNT:
-
-        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_COUNT";
+        // 性能优化：移除调试输出
         _handleMissionCount(message);
         break;
 
     case MAVLINK_MSG_ID_MISSION_ITEM_INT:
-        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_ITEM_INT";
+        // 性能优化：移除调试输出
         _handleMissionItem(message);
         break;
 
     case MAVLINK_MSG_ID_MISSION_REQUEST:
     case MAVLINK_MSG_ID_MISSION_REQUEST_INT:
-
-        qDebug()<<__FUNCTION__<<"case MAVLINK_MSG_ID_MISSION_REQUEST_INT";
+        // 性能优化：移除调试输出
         _handleMissionRequest(message);
         break;
 

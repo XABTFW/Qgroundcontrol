@@ -392,7 +392,23 @@ void ParameterManager::_factRawValueUpdated(const QVariant &rawValue)
 
 void ParameterManager::myswarm_param_send(int id, QString name, FactMetaData::ValueType_t tp, float value)
 {
-    _sendParamSetToVehicle(1, name, tp, value);
+    int componentId = 1;  // 使用组件ID 1（MAV_COMP_ID_AUTOPILOT1）
+
+    // 将集群参数加入等待写入列表，启用超时重试机制
+    if (_waitingWriteParamNameMap.contains(componentId)) {
+        if (!_waitingWriteParamNameMap[componentId].contains(name)) {
+            _waitingWriteParamBatchCount++;
+        }
+        _waitingWriteParamNameMap[componentId][name] = 0; // 设置重试计数为0
+        _updateProgressBar();
+        _waitingParamTimeoutTimer.start();  // 启动3秒超时定时器
+        qCDebug(ParameterManagerLog) << _logVehiclePrefix(componentId) << "Swarm parameter write started (with retry mechanism) - name:" << name << "value:" << value;
+    } else {
+        qCWarning(ParameterManagerLog) << "Component" << componentId << "not initialized for swarm parameter:" << name;
+    }
+
+    // 发送参数到飞机
+    _sendParamSetToVehicle(componentId, name, tp, value);
 }
 
 void ParameterManager::_ftpDownloadComplete(const QString &fileName, const QString &errorMsg)

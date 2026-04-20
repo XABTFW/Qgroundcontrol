@@ -289,6 +289,8 @@ qt_add_executable(${CMAKE_PROJECT_NAME}
     src/Mavlinktest2.cpp
     src/swarm_send.cpp
     src/swarm_send.h
+    src/SwarmOperationHandler.cpp
+    src/SwarmOperationHandler.h
 )
 
 if(WIN32)
