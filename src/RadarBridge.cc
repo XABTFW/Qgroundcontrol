@@ -31,7 +31,7 @@ constexpr uint8_t  FRAME_HEADER         = 0xFD;
 constexpr uint8_t  PAYLOAD_LENGTH_FIELD = 0x10;
 constexpr uint8_t  MESSAGE_TYPE         = 0x01;
 constexpr uint8_t  RESERVED             = 0x01;
-constexpr int      HEADER_SIZE          = 15;
+constexpr int      HEADER_SIZE          = 19; // 8-byte (u64) time field
 constexpr int      TARGET_SIZE          = 50;
 constexpr int      CRC_SIZE             = 2;
 constexpr int      MAX_DATAGRAM_SIZE    = 1472;
@@ -162,11 +162,11 @@ bool RadarBridge::_decodeRadarFrame(const uint8_t *buffer, int length, RadarTarg
     if (buffer[5] != 0xC5 || buffer[6] != 0xCE || buffer[7] != 0xC2) { return false; }
     if (buffer[1] != PAYLOAD_LENGTH_FIELD) { return false; }
 
-    const int count = buffer[14];
+    const int count = buffer[18];
     if (count == 0 || count > MAX_TARGETS || count > targetCapacity) { return false; }
 
     const int expected = frame_size(count);
-    if (length != expected || static_cast<int>(get_u16(buffer, 12)) != expected) { return false; }
+    if (length != expected || static_cast<int>(get_u16(buffer, 16)) != expected) { return false; }
 
     if (_crcMode != CrcMode::None) {
         const uint16_t got = get_u16(buffer, length - CRC_SIZE);
