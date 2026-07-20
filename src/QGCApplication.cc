@@ -92,6 +92,7 @@
 
 
 #include "Mavlinktest2.h"
+#include "RadarBridge.h"
 #include "swarm_send.h"
 
 QGC_LOGGING_CATEGORY(QGCApplicationLog, "qgc.qgcapplication")
@@ -365,6 +366,7 @@ void QGCApplication::_initForNormalAppBoot()
     LinkManager::instance()->init();
     MultiVehicleManager::instance()->init();
     MAVLinkProtocol::instance()->init();
+    RadarBridge::instance()->init();
     VideoManager::instance()->init();
 
     // Image provider for Optical Flow
