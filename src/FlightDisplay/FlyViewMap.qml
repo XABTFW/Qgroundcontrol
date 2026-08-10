@@ -417,6 +417,32 @@ FlightMap {
         }
     }
 
+    // Cooperative rendezvous Offboard target
+    MapQuickItem {
+        id:             offboardTargetItem
+        visible:        false
+        z:              QGroundControl.zOrderMapItems
+        anchorPoint.x:  sourceItem.anchorPointX
+        anchorPoint.y:  sourceItem.anchorPointY
+        sourceItem: MissionItemIndexLabel {
+            checked:    true
+            index:      -1
+            label:      qsTr("Offboard target")
+        }
+
+        Connections {
+            target: QGroundControl.multiVehicleManager
+            function onActiveVehicleChanged(activeVehicle) {
+                offboardTargetItem.visible = false
+            }
+        }
+
+        function show(coord) {
+            offboardTargetItem.coordinate = coord
+            offboardTargetItem.visible = true
+        }
+    }
+
     // Orbit editing visuals
     QGCMapCircleVisuals {
         id:             orbitMapCircle
@@ -597,6 +623,17 @@ FlightMap {
                             mapClickDropPanel.close()
                             gotoLocationItem.show(mapClickCoord)
                             globals.guidedControllerFlyView.confirmAction(globals.guidedControllerFlyView.actionGoto, mapClickCoord, gotoLocationItem)
+                        }
+                    }
+
+                    QGCButton {
+                        Layout.fillWidth:   true
+                        text:               qsTr("Send Offboard target")
+                        visible:            globals.guidedControllerFlyView.showGotoLocation
+                        onClicked: {
+                            mapClickDropPanel.close()
+                            offboardTargetItem.show(mapClickCoord)
+                            _activeVehicle.sendCooperativeRendezvousLocation(mapClickCoord)
                         }
                     }
 

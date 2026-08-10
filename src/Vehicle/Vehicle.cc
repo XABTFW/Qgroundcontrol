@@ -2126,6 +2126,55 @@ void Vehicle::guidedModeGotoLocation(const QGeoCoordinate& gotoCoord)
     _firmwarePlugin->guidedModeGotoLocation(this, gotoCoord);
 }
 
+void Vehicle::sendCooperativeRendezvousLocation(const QGeoCoordinate& gotoCoord)
+{
+    if (!coordinate().isValid() || !gotoCoord.isValid() || qIsNaN(altitudeAMSL()->rawValue().toDouble())) {
+        qgcApp()->showAppMessage(tr("Unable to send Offboard target, vehicle position not known."));
+        return;
+    }
+
+    const double maxDistance = SettingsManager::instance()->flyViewSettings()->maxGoToLocationDistance()->rawValue().toDouble();
+
+    if (coordinate().distanceTo(gotoCoord) > maxDistance) {
+        qgcApp()->showAppMessage(tr("New location is too far."));
+        return;
+    }
+
+    SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
+
+    if (!sharedLink) {
+        qCDebug(VehicleLog) << "sendCooperativeRendezvousLocation: primary link gone!";
+        return;
+    }
+
+    const uint16_t typeMask = POSITION_TARGET_TYPEMASK_VX_IGNORE
+                              | POSITION_TARGET_TYPEMASK_VY_IGNORE
+                              | POSITION_TARGET_TYPEMASK_VZ_IGNORE
+                              | POSITION_TARGET_TYPEMASK_AX_IGNORE
+                              | POSITION_TARGET_TYPEMASK_AY_IGNORE
+                              | POSITION_TARGET_TYPEMASK_AZ_IGNORE
+                              | POSITION_TARGET_TYPEMASK_YAW_IGNORE
+                              | POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE;
+    mavlink_message_t message{};
+    mavlink_msg_set_position_target_global_int_pack_chan(
+        static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
+        static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
+        sharedLink->mavlinkChannel(),
+        &message,
+        0,
+        static_cast<uint8_t>(id()),
+        static_cast<uint8_t>(defaultComponentId()),
+        MAV_FRAME_GLOBAL_INT,
+        typeMask,
+        static_cast<int32_t>(qRound64(gotoCoord.latitude() * 1e7)),
+        static_cast<int32_t>(qRound64(gotoCoord.longitude() * 1e7)),
+        altitudeAMSL()->rawValue().toFloat(),
+        0.f, 0.f, 0.f,
+        0.f, 0.f, 0.f,
+        0.f, 0.f);
+    sendMessageOnLinkThreadSafe(sharedLink.get(), message);
+}
+
 void Vehicle::guidedModeChangeAltitude(double altitudeChange, bool pauseVehicle)
 {
     if (!guidedModeSupported()) {

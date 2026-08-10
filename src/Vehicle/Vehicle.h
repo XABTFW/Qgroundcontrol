@@ -314,6 +314,9 @@ public:
     /// Command vehicle to move to specified location (altitude is ignored)
     Q_INVOKABLE void guidedModeGotoLocation(const QGeoCoordinate& gotoCoord);
 
+    /// Send a cooperative-rendezvous position target without changing flight mode.
+    Q_INVOKABLE void sendCooperativeRendezvousLocation(const QGeoCoordinate& gotoCoord);
+
     /// Command vehicle to change altitude
     ///     @param altitudeChange If > 0, go up by amount specified, if < 0, go down by amount specified
     ///     @param pauseVehicle true: pause vehicle prior to altitude change

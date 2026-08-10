@@ -170,7 +170,8 @@ bool RadarBridge::_decodeRadarFrame(const uint8_t *buffer, int length, RadarTarg
 
     if (_crcMode != CrcMode::None) {
         const uint16_t got = get_u16(buffer, length - CRC_SIZE);
-        const uint16_t calc = _crc16(_crcMode, buffer, length - CRC_SIZE);
+        // CRC covers payload length through payload data. Exclude the 0xFD frame header and CRC field itself.
+        const uint16_t calc = _crc16(_crcMode, buffer + 1, length - CRC_SIZE - 1);
         if (got != calc) { return false; }
     }
 
