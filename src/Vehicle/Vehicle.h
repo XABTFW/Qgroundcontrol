@@ -203,6 +203,20 @@ public:
     Q_PROPERTY(QVariantList         toolIndicators              READ toolIndicators                                                 NOTIFY toolIndicatorsChanged)
     Q_PROPERTY(QVariantList         modeIndicators              READ modeIndicators                                                 NOTIFY modeIndicatorsChanged)
     Q_PROPERTY(bool              initialPlanRequestComplete     READ initialPlanRequestComplete                                     NOTIFY initialPlanRequestCompleteChanged)
+    Q_PROPERTY(bool              dytTelemetryAvailable          READ dytTelemetryAvailable                                         NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(int               dytVehicleType                 READ dytVehicleType                                                NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(QString           dytVehicleTypeText             READ dytVehicleTypeText                                            NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(int               dytGuidancePhase               READ dytGuidancePhase                                              NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(QString           dytGuidancePhaseText           READ dytGuidancePhaseText                                          NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(QString           dytCommandResultText           READ dytCommandResultText                                          NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(bool              dytTargetValid                 READ dytTargetValid                                                NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(double            dytRangeM                      READ dytRangeM                                                     NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(double            dytClosingSpeedMps             READ dytClosingSpeedMps                                            NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(bool              dytNetTriggerSent              READ dytNetTriggerSent                                             NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(uint              dytNetTriggerCount             READ dytNetTriggerCount                                            NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(QString           dytGuidanceDetails             READ dytGuidanceDetails                                            NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(QString           dytTargetDetails               READ dytTargetDetails                                              NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(QString           dytReplyDetails                READ dytReplyDetails                                               NOTIFY dytTelemetryChanged)
     Q_PROPERTY(QVariantList         staticCameraList            READ staticCameraList                                               CONSTANT)
     Q_PROPERTY(QGCCameraManager*    cameraManager               READ cameraManager                                                  NOTIFY cameraManagerChanged)
     Q_PROPERTY(QString              hobbsMeter                  READ hobbsMeter                                                     NOTIFY hobbsMeterChanged)
@@ -317,6 +331,9 @@ public:
     /// Send a cooperative-rendezvous position target without changing flight mode.
     Q_INVOKABLE void sendCooperativeRendezvousLocation(const QGeoCoordinate& gotoCoord);
 
+    /// Request DYT phase 2 (midcourse) or phase 3 (terminal). The actual state is acknowledged in telemetry.
+    Q_INVOKABLE void sendDytGuidanceCommand(int phase);
+
     /// Command vehicle to change altitude
     ///     @param altitudeChange If > 0, go up by amount specified, if < 0, go down by amount specified
     ///     @param pauseVehicle true: pause vehicle prior to altitude change
@@ -423,6 +440,20 @@ public:
     bool    changeHeadingSupported  () const;
     QString gotoFlightMode          () const;
     bool    hasGripper              () const;
+    bool    dytTelemetryAvailable   () const { return _dytTelemetryAvailable; }
+    int     dytVehicleType          () const { return _dytVehicleType; }
+    QString dytVehicleTypeText      () const { return _dytVehicleTypeText; }
+    int     dytGuidancePhase        () const { return _dytGuidancePhase; }
+    QString dytGuidancePhaseText    () const { return _dytGuidancePhaseText; }
+    QString dytCommandResultText    () const { return _dytCommandResultText; }
+    bool    dytTargetValid          () const { return _dytTargetValid; }
+    double  dytRangeM               () const { return _dytRangeM; }
+    double  dytClosingSpeedMps      () const { return _dytClosingSpeedMps; }
+    bool    dytNetTriggerSent       () const { return _dytNetTriggerSent; }
+    uint    dytNetTriggerCount      () const { return _dytNetTriggerCount; }
+    QString dytGuidanceDetails      () const { return _dytGuidanceDetails; }
+    QString dytTargetDetails        () const { return _dytTargetDetails; }
+    QString dytReplyDetails         () const { return _dytReplyDetails; }
     bool haveMRSpeedLimits() const { return _multirotor_speed_limits_available; }
     bool haveFWSpeedLimits() const { return _fixed_wing_airspeed_limits_available; }
 
@@ -871,6 +902,7 @@ signals:
     void requiresGpsFixChanged          ();
     void haveMRSpeedLimChanged          ();
     void haveFWSpeedLimChanged          ();
+    void dytTelemetryChanged            ();
 
     void firmwareVersionChanged         ();
     void firmwareCustomVersionChanged   ();
@@ -967,6 +999,9 @@ private:
     void _handleGimbalOrientation       (const mavlink_message_t& message);
     void _handleObstacleDistance        (const mavlink_message_t& message);
     void _handleFenceStatus             (const mavlink_message_t& message);
+    void _handleDytSystemStatus         (const mavlink_message_t& message);
+    void _handleDytTargetStatus         (const mavlink_message_t& message);
+    void _handleDytStatusReply          (const mavlink_message_t& message);
     void _handleEvent(uint8_t comp_id, std::unique_ptr<events::parser::ParsedEvent> event);
     // ArduPilot dialect messages
 #if !defined(QGC_NO_ARDUPILOT_DIALECT)
@@ -1025,6 +1060,22 @@ private:
     bool            _flying = false;
     bool            _landing = false;
     bool            _vtolInFwdFlight = false;
+    bool            _dytTelemetryAvailable = false;
+    bool            _dytTargetValid = false;
+    bool            _dytNetTriggerSent = false;
+    int             _dytVehicleType = 0;
+    int             _dytGuidancePhase = 0;
+    double          _dytRangeM = qQNaN();
+    double          _dytClosingSpeedMps = qQNaN();
+    uint32_t        _dytNetTriggerCount = 0;
+    uint32_t        _dytNextRequestId = 0;
+    uint32_t        _dytPendingRequestId = 0;
+    QString         _dytVehicleTypeText = tr("Unknown");
+    QString         _dytGuidancePhaseText = tr("Disarmed");
+    QString         _dytCommandResultText = tr("No command");
+    QString         _dytGuidanceDetails;
+    QString         _dytTargetDetails;
+    QString         _dytReplyDetails;
     uint32_t        _onboardControlSensorsPresent = 0;
     uint32_t        _onboardControlSensorsEnabled = 0;
     uint32_t        _onboardControlSensorsHealth = 0;

@@ -68,6 +68,17 @@
 
 #include <QtCore/QDateTime>
 
+#include <cstring>
+
+namespace {
+constexpr uint32_t DYT_GUIDANCE_COMMAND_MSG_ID = 12925;
+constexpr uint8_t DYT_GUIDANCE_COMMAND_LEN = 7;
+constexpr uint8_t DYT_GUIDANCE_COMMAND_CRC = 169;
+constexpr uint32_t DYT_SYSTEM_STATUS_MSG_ID = 12926;
+constexpr uint32_t DYT_TARGET_STATUS_MSG_ID = 12927;
+constexpr uint32_t DYT_STATUS_REPLY_MSG_ID = 12928;
+}
+
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
 
 #define UPDATE_TIMER 50
@@ -526,6 +537,15 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
     this->handleMessage(this, message);
 
     switch (message.msgid) {
+    case DYT_SYSTEM_STATUS_MSG_ID:
+        _handleDytSystemStatus(message);
+        break;
+    case DYT_TARGET_STATUS_MSG_ID:
+        _handleDytTargetStatus(message);
+        break;
+    case DYT_STATUS_REPLY_MSG_ID:
+        _handleDytStatusReply(message);
+        break;
     case MAVLINK_MSG_ID_HOME_POSITION:
         _handleHomePosition(message);
         break;
@@ -2173,6 +2193,230 @@ void Vehicle::sendCooperativeRendezvousLocation(const QGeoCoordinate& gotoCoord)
         0.f, 0.f, 0.f,
         0.f, 0.f);
     sendMessageOnLinkThreadSafe(sharedLink.get(), message);
+}
+
+void Vehicle::sendDytGuidanceCommand(int phase)
+{
+    if (phase != 2 && phase != 3) {
+        qgcApp()->showAppMessage(tr("DYT guidance phase must be 2 or 3."));
+        return;
+    }
+
+    SharedLinkInterfacePtr sharedLink = vehicleLinkManager()->primaryLink().lock();
+
+    if (!sharedLink) {
+        qCDebug(VehicleLog) << "sendDytGuidanceCommand: primary link gone";
+        return;
+    }
+
+    uint32_t requestId = static_cast<uint32_t>(QDateTime::currentMSecsSinceEpoch());
+
+    if (requestId == 0 || requestId == _dytNextRequestId) {
+        ++requestId;
+
+        if (requestId == 0) {
+            ++requestId;
+        }
+    }
+
+    _dytNextRequestId = requestId;
+
+    char payload[DYT_GUIDANCE_COMMAND_LEN]{};
+    _mav_put_uint32_t(payload, 0, _dytNextRequestId);
+    _mav_put_uint8_t(payload, 4, static_cast<uint8_t>(id()));
+    _mav_put_uint8_t(payload, 5, 0);
+    _mav_put_uint8_t(payload, 6, static_cast<uint8_t>(phase));
+
+    mavlink_message_t message{};
+    std::memcpy(_MAV_PAYLOAD_NON_CONST(&message), payload, sizeof(payload));
+    message.msgid = DYT_GUIDANCE_COMMAND_MSG_ID;
+    mavlink_finalize_message_chan(
+        &message,
+        static_cast<uint8_t>(MAVLinkProtocol::instance()->getSystemId()),
+        static_cast<uint8_t>(MAVLinkProtocol::getComponentId()),
+        sharedLink->mavlinkChannel(),
+        DYT_GUIDANCE_COMMAND_LEN,
+        DYT_GUIDANCE_COMMAND_LEN,
+        DYT_GUIDANCE_COMMAND_CRC);
+
+    if (sendMessageOnLinkThreadSafe(sharedLink.get(), message)) {
+        _dytPendingRequestId = _dytNextRequestId;
+        _dytCommandResultText = tr("Request %1 sent, waiting for aircraft").arg(_dytNextRequestId);
+        emit dytTelemetryChanged();
+    }
+}
+
+void Vehicle::_handleDytSystemStatus(const mavlink_message_t& message)
+{
+    if (message.len < 91) {
+        return;
+    }
+
+    const uint32_t commandSequence = _MAV_RETURN_uint32_t(&message, 4);
+    _dytNetTriggerCount = _MAV_RETURN_uint32_t(&message, 8);
+    const float losAge = _MAV_RETURN_float(&message, 12);
+    const float frameDt = _MAV_RETURN_float(&message, 16);
+    const float delay = _MAV_RETURN_float(&message, 20);
+    const uint16_t flags = _MAV_RETURN_uint16_t(&message, 80);
+    _dytNetTriggerSent = (flags & (1u << 8)) != 0;
+    _dytVehicleType = _MAV_RETURN_uint8_t(&message, 82);
+    _dytGuidancePhase = _MAV_RETURN_uint8_t(&message, 83);
+    const uint8_t gcsPhaseRequest = _MAV_RETURN_uint8_t(&message, 84);
+    const uint8_t commandPhase = _MAV_RETURN_uint8_t(&message, 85);
+    const uint8_t commandResult = _MAV_RETURN_uint8_t(&message, 86);
+    const uint8_t guidanceState = _MAV_RETURN_uint8_t(&message, 87);
+    const uint8_t requestedSubmode = _MAV_RETURN_uint8_t(&message, 88);
+    const uint8_t activeSubmode = _MAV_RETURN_uint8_t(&message, 89);
+    const uint8_t lostReason = _MAV_RETURN_uint8_t(&message, 90);
+
+    switch (_dytVehicleType) {
+    case 1: _dytVehicleTypeText = tr("Fighter"); break;
+    case 2: _dytVehicleTypeText = tr("Net-capture"); break;
+    default: _dytVehicleTypeText = tr("Unknown"); break;
+    }
+
+    switch (_dytGuidancePhase) {
+    case 0: _dytGuidancePhaseText = tr("Disarmed"); break;
+    case 1: _dytGuidancePhaseText = tr("Initial / takeoff"); break;
+    case 2: _dytGuidancePhaseText = tr("Midcourse"); break;
+    case 3: _dytGuidancePhaseText = tr("Terminal"); break;
+    default: _dytGuidancePhaseText = tr("Unknown"); break;
+    }
+
+    if (_dytPendingRequestId == 0 || commandSequence == _dytPendingRequestId) {
+        switch (commandResult) {
+        case 0: _dytCommandResultText = tr("No command"); break;
+        case 1: _dytCommandResultText = tr("Pending: phase %1, request %2").arg(commandPhase).arg(commandSequence); break;
+        case 2: _dytCommandResultText = tr("Accepted: phase %1, request %2").arg(commandPhase).arg(commandSequence); break;
+        case 3: _dytCommandResultText = tr("Denied: phase %1, request %2").arg(commandPhase).arg(commandSequence); break;
+        default: _dytCommandResultText = tr("Failed: phase %1, request %2").arg(commandPhase).arg(commandSequence); break;
+        }
+
+        if (_dytPendingRequestId != 0 && commandSequence == _dytPendingRequestId && commandResult >= 2) {
+            _dytPendingRequestId = 0;
+        }
+    }
+
+    QStringList activeFlags;
+    const char* flagNames[] = {"armed", "guidance", "locked", "DYT-control", "fresh", "intercept",
+                               "midcourse", "mid-target", "net-sent"};
+    for (int bit = 0; bit < 9; ++bit) {
+        if (flags & (1u << bit)) {
+            activeFlags.append(QString::fromLatin1(flagNames[bit]));
+        }
+    }
+
+    _dytGuidanceDetails = tr("Request: active=%1 last=%2 result=%3\n"
+                             "State: detail=%4 requested-submode=%5 active-submode=%6 lost=%7\n"
+                             "Flags: %8\n"
+                             "LOS age/frame/delay: %9 / %10 / %11 s\n"
+                             "LOS NED: [%12, %13, %14]\n"
+                             "LOS rate NED: [%15, %16, %17]\n"
+                             "Velocity SP: [%18, %19, %20] m/s\n"
+                             "Acceleration SP: [%21, %22, %23] m/s²\n"
+                             "Yaw SP/rate: %24 / %25 rad\nNet trigger count: %26")
+        .arg(gcsPhaseRequest).arg(commandPhase).arg(commandResult)
+        .arg(guidanceState).arg(requestedSubmode).arg(activeSubmode).arg(lostReason)
+        .arg(activeFlags.join(QStringLiteral(", ")))
+        .arg(losAge, 0, 'f', 3).arg(frameDt, 0, 'f', 3).arg(delay, 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 24), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 28), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 32), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 36), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 40), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 44), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 48), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 52), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 56), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 60), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 64), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 68), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 72), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 76), 0, 'f', 3)
+        .arg(_dytNetTriggerCount);
+
+    _dytTelemetryAvailable = true;
+    emit dytTelemetryChanged();
+}
+
+void Vehicle::_handleDytTargetStatus(const mavlink_message_t& message)
+{
+    if (message.len < 83) {
+        return;
+    }
+
+    const uint16_t parseErrors = _MAV_RETURN_uint16_t(&message, 72);
+    const uint16_t flags = _MAV_RETURN_uint16_t(&message, 74);
+    _dytTargetValid = flags & 1u;
+    _dytRangeM = _MAV_RETURN_float(&message, 56);
+    _dytClosingSpeedMps = (flags & (1u << 11)) != 0
+        ? (message.len >= 87 ? _MAV_RETURN_float(&message, 83) : 0.0)
+        : qQNaN();
+
+    QStringList targetFlags;
+    const char* flagNames[] = {"valid", "auto-hint", "enhance", "recording", "motor", "follow",
+                               "laser", "selftest", "gyro-fault", "servo-fault", "image-fault", "closing-speed"};
+    for (int bit = 0; bit < 12; ++bit) {
+        if (flags & (1u << bit)) {
+            targetFlags.append(QString::fromLatin1(flagNames[bit]));
+        }
+    }
+
+    _dytTargetDetails = tr("Frame: %1 tracking=%2 video=%3 algorithm=%4\n"
+                           "Flags: %5\n"
+                           "LOS x/y: %6 / %7 rad\n"
+                           "Gimbal roll/pitch-frame/pitch/yaw: %8 / %9 / %10 / %11 rad\n"
+                           "Gimbal rates roll/pitch/yaw: %12 / %13 / %14 rad/s\n"
+                           "BBox: %15 × %16 px\nRange: %17 m  Closing speed: %18 m/s  Zoom: %19×\n"
+                           "Frame dt/RX age: %20 / %21 s\n"
+                           "Parser errors: %22  Raw: %23 %24 %25 selftest=%26")
+        .arg(_MAV_RETURN_uint32_t(&message, 8))
+        .arg(_MAV_RETURN_uint8_t(&message, 76))
+        .arg(_MAV_RETURN_uint8_t(&message, 77))
+        .arg(_MAV_RETURN_uint8_t(&message, 78))
+        .arg(targetFlags.join(QStringLiteral(", ")))
+        .arg(_MAV_RETURN_float(&message, 12), 0, 'f', 4)
+        .arg(_MAV_RETURN_float(&message, 16), 0, 'f', 4)
+        .arg(_MAV_RETURN_float(&message, 20), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 24), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 28), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 32), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 36), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 40), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 44), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 48), 0, 'f', 1)
+        .arg(_MAV_RETURN_float(&message, 52), 0, 'f', 1)
+        .arg(_dytRangeM, 0, 'f', 2)
+        .arg(_dytClosingSpeedMps, 0, 'f', 2)
+        .arg(_MAV_RETURN_float(&message, 60), 0, 'f', 1)
+        .arg(_MAV_RETURN_float(&message, 64), 0, 'f', 3)
+        .arg(_MAV_RETURN_float(&message, 68), 0, 'f', 3)
+        .arg(parseErrors)
+        .arg(static_cast<qulonglong>(_MAV_RETURN_uint8_t(&message, 79)), 2, 16, QLatin1Char('0'))
+        .arg(static_cast<qulonglong>(_MAV_RETURN_uint8_t(&message, 80)), 2, 16, QLatin1Char('0'))
+        .arg(static_cast<qulonglong>(_MAV_RETURN_uint8_t(&message, 81)), 2, 16, QLatin1Char('0'))
+        .arg(static_cast<qulonglong>(_MAV_RETURN_uint8_t(&message, 82)), 2, 16, QLatin1Char('0'));
+
+    _dytTelemetryAvailable = true;
+    emit dytTelemetryChanged();
+}
+
+void Vehicle::_handleDytStatusReply(const mavlink_message_t& message)
+{
+    if (message.len < 29) {
+        return;
+    }
+
+    const uint8_t paramLength = qMin<uint8_t>(_MAV_RETURN_uint8_t(&message, 11), 16);
+    const QByteArray params(_MAV_PAYLOAD(&message) + 13, paramLength);
+    _dytReplyDetails = tr("Reply code: %1  length: %2  truncated: %3  parser errors: %4\nParams: %5")
+        .arg(_MAV_RETURN_uint8_t(&message, 10))
+        .arg(paramLength)
+        .arg(_MAV_RETURN_uint8_t(&message, 12))
+        .arg(_MAV_RETURN_uint16_t(&message, 8))
+        .arg(QString::fromLatin1(params.toHex(' ')));
+    _dytTelemetryAvailable = true;
+    emit dytTelemetryChanged();
 }
 
 void Vehicle::guidedModeChangeAltitude(double altitudeChange, bool pauseVehicle)

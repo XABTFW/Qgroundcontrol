@@ -38,6 +38,16 @@ Item {
     property bool   isViewer3DOpen:         false
 
     property var    _activeVehicle:         QGroundControl.multiVehicleManager.activeVehicle
+    property var    _sdm50Group:            _activeVehicle ? _activeVehicle.distanceSensors : null
+    property var    _sdm50DistanceFact:     _sdm50Group ? _sdm50Group.rotationNone : null
+    property real   _sdm50DistanceM:        _sdm50DistanceFact ? Number(_sdm50DistanceFact.rawValue) : NaN
+    property real   _sdm50MaxDistanceM:     _sdm50Group ? Number(_sdm50Group.maxDistance.rawValue) : NaN
+    property bool   _sdm50Available:        _sdm50Group && _sdm50Group.telemetryAvailable
+    property bool   _sdm50Valid:            _sdm50Available && isFinite(_sdm50DistanceM) &&
+                                             isFinite(_sdm50MaxDistanceM) && _sdm50DistanceM >= 0.05 &&
+                                             _sdm50DistanceM < _sdm50MaxDistanceM
+    property real   _dytClosingSpeedMps:    _activeVehicle ? Number(_activeVehicle.dytClosingSpeedMps) : NaN
+    property bool   _dytClosingSpeedValid:  isFinite(_dytClosingSpeedMps)
     property var    _planMasterController:  globals.planMasterControllerFlyView
     property var    _missionController:     _planMasterController.missionController
     property var    _geoFenceController:    _planMasterController.geoFenceController
@@ -51,8 +61,19 @@ Item {
     property real   _layoutMargin:          ScreenTools.defaultFontPixelWidth * 0.75
     property bool   _layoutSpacing:         ScreenTools.defaultFontPixelWidth
     property bool   _showSingleVehicleUI:   true
+    property int    _pendingDytPhase:       0
+    property bool   _dytDetailsExpanded:    false
 
     property bool utmspActTrigger
+
+    function enableSdm50LiveUpdates() {
+        if (_sdm50Group) {
+            _sdm50Group.setLiveUpdates(true)
+        }
+    }
+
+    on_ActiveVehicleChanged: enableSdm50LiveUpdates()
+    Component.onCompleted: enableSdm50LiveUpdates()
 
     QGCToolInsets {
         id:                     _totalToolInsets
@@ -212,6 +233,162 @@ Item {
         visible:            !ScreenTools.isTinyScreen && QGroundControl.corePlugin.options.flyView.showMapScale && !isViewer3DOpen && mapControl.pipState.state === mapControl.pipState.fullState
 
         property real topEdgeCenterInset: visible ? y + height : 0
+    }
+
+    Rectangle {
+        id:                     sdm50Panel
+        anchors.left:           toolStrip.right
+        anchors.top:            mapScale.bottom
+        anchors.leftMargin:     _toolsMargin
+        anchors.topMargin:      _toolsMargin
+        width:                  ScreenTools.defaultFontPixelWidth * 24
+        height:                 sdm50Column.implicitHeight + _toolsMargin * 2
+        radius:                 ScreenTools.defaultFontPixelWidth * 0.5
+        color:                  sdm50Palette.window
+        border.width:           2
+        border.color:           _sdm50Valid ? "#36c96f" : sdm50Palette.text
+        opacity:                0.94
+        visible:                _activeVehicle
+        z:                      QGroundControl.zOrderWidgets + 2
+
+        QGCPalette { id: sdm50Palette; colorGroupEnabled: true }
+
+        ColumnLayout {
+            id:                 sdm50Column
+            anchors.fill:       parent
+            anchors.margins:    _toolsMargin
+            spacing:            _margins / 2
+
+            QGCLabel {
+                text:           qsTr("SDM50 Laser Range")
+                font.bold:      true
+                Layout.fillWidth: true
+            }
+
+            QGCLabel {
+                text:           _sdm50Valid ? _sdm50DistanceM.toFixed(2) + qsTr(" m") : qsTr("-- m")
+                font.bold:      true
+                font.pointSize: ScreenTools.largeFontPointSize
+                Layout.fillWidth: true
+            }
+
+            QGCLabel {
+                text: !_sdm50Available ? qsTr("Status: waiting for data")
+                                      : (_sdm50Valid ? qsTr("Status: valid") : qsTr("Status: no target"))
+                Layout.fillWidth: true
+            }
+
+            QGCLabel {
+                text: _dytClosingSpeedValid
+                      ? qsTr("DYT closing speed: %1 m/s").arg(_dytClosingSpeedMps.toFixed(2))
+                      : qsTr("DYT closing speed: -- m/s")
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    Rectangle {
+        id:                     dytPanel
+        anchors.left:           toolStrip.right
+        anchors.top:            sdm50Panel.bottom
+        anchors.leftMargin:     _toolsMargin
+        anchors.topMargin:      _toolsMargin
+        width:                  Math.min(parent.width * 0.55, ScreenTools.defaultFontPixelWidth * 58)
+        height:                 dytPanelColumn.implicitHeight + _toolsMargin * 2
+        radius:                 ScreenTools.defaultFontPixelWidth * 0.5
+        color:                  qgcPal.window
+        border.color:           qgcPal.text
+        opacity:                0.94
+        visible:                _activeVehicle && _activeVehicle.dytTelemetryAvailable
+        z:                      QGroundControl.zOrderWidgets + 2
+
+        QGCPalette { id: qgcPal; colorGroupEnabled: true }
+
+        ColumnLayout {
+            id:                 dytPanelColumn
+            anchors.margins:    _toolsMargin
+            anchors.left:       parent.left
+            anchors.right:      parent.right
+            anchors.top:        parent.top
+            spacing:            _margins
+
+            RowLayout {
+                Layout.fillWidth: true
+                QGCLabel {
+                    text: qsTr("DYT  %1  |  %2").arg(_activeVehicle ? _activeVehicle.dytVehicleTypeText : "")
+                                                       .arg(_activeVehicle ? _activeVehicle.dytGuidancePhaseText : "")
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+                QGCButton {
+                    text: _dytDetailsExpanded ? qsTr("Hide details") : qsTr("Details")
+                    onClicked: _dytDetailsExpanded = !_dytDetailsExpanded
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                QGCButton {
+                    text: qsTr("Enter midcourse")
+                    enabled: _activeVehicle && _activeVehicle.armed
+                    onClicked: {
+                        _pendingDytPhase = 2
+                        dytConfirmDialog.open()
+                    }
+                }
+                QGCButton {
+                    text: qsTr("Enter terminal")
+                    enabled: _activeVehicle && _activeVehicle.armed
+                    onClicked: {
+                        _pendingDytPhase = 3
+                        dytConfirmDialog.open()
+                    }
+                }
+                QGCLabel {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    text: _activeVehicle ? _activeVehicle.dytCommandResultText : ""
+                }
+            }
+
+            QGCLabel {
+                Layout.fillWidth: true
+                text: _activeVehicle ? qsTr("Target: %1  Range: %2 m  Net trigger: %3 (%4)")
+                                           .arg(_activeVehicle.dytTargetValid ? qsTr("valid") : qsTr("invalid"))
+                                           .arg(Number(_activeVehicle.dytRangeM).toFixed(2))
+                                           .arg(_activeVehicle.dytNetTriggerSent ? qsTr("sent") : qsTr("not sent"))
+                                           .arg(_activeVehicle.dytNetTriggerCount) : ""
+            }
+
+            ScrollView {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.min(ScreenTools.defaultFontPixelHeight * 24, _root.height * 0.48)
+                visible: _dytDetailsExpanded
+                clip: true
+
+                QGCLabel {
+                    width: dytPanel.width - _toolsMargin * 4
+                    wrapMode: Text.WrapAnywhere
+                    text: _activeVehicle ? _activeVehicle.dytGuidanceDetails + "\n\n" +
+                                           _activeVehicle.dytTargetDetails + "\n\n" +
+                                           _activeVehicle.dytReplyDetails : ""
+                }
+            }
+        }
+    }
+
+    MessageDialog {
+        id: dytConfirmDialog
+        title: qsTr("Confirm guidance switch")
+        text: _pendingDytPhase === 2
+              ? qsTr("Command the aircraft to enter midcourse guidance?")
+              : qsTr("Command the aircraft to enter terminal guidance?")
+        buttons: MessageDialog.Yes | MessageDialog.No
+        onAccepted: {
+            if (_activeVehicle) {
+                _activeVehicle.sendDytGuidanceCommand(_pendingDytPhase)
+            }
+        }
     }
 
     Loader {

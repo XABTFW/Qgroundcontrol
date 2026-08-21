@@ -38,6 +38,12 @@ typedef enum : uint8_t {
 
 #include <mavlink_types.h>
 
+// QGC's generated "all" dialect does not contain the project-specific DYT
+// messages. Override the message lookup so the byte parser can validate their
+// CRC extras before Vehicle decodes the payloads.
+#define MAVLINK_GET_MSG_ENTRY
+static inline const mavlink_msg_entry_t* mavlink_get_msg_entry(uint32_t msgid);
+
 #define MAVLINK_EXTERNAL_RX_STATUS
 #ifdef MAVLINK_EXTERNAL_RX_STATUS
     extern mavlink_status_t m_mavlink_status[MAVLINK_COMM_NUM_BUFFERS];
@@ -68,6 +74,41 @@ typedef enum : uint8_t {
 #endif
 
 #include <mavlink.h>
+
+static inline const mavlink_msg_entry_t* mavlink_get_msg_entry(uint32_t msgid)
+{
+    static const mavlink_msg_entry_t dytEntries[] = {
+        { 12925, 169, 7, 7, 3, 4, 5 },
+        { 12926, 0, 91, 91, 0, 0, 0 },
+        { 12927, 157, 83, 87, 0, 0, 0 },
+        { 12928, 227, 29, 29, 0, 0, 0 },
+    };
+
+    for (const mavlink_msg_entry_t& entry : dytEntries) {
+        if (entry.msgid == msgid) {
+            return &entry;
+        }
+    }
+
+    static const mavlink_msg_entry_t entries[] = MAVLINK_MESSAGE_CRCS;
+    uint32_t low = 0;
+    uint32_t high = static_cast<uint32_t>(sizeof(entries) / sizeof(entries[0]) - 1);
+
+    while (low < high) {
+        const uint32_t mid = (low + 1 + high) / 2;
+
+        if (msgid < entries[mid].msgid) {
+            high = mid - 1;
+        } else if (msgid > entries[mid].msgid) {
+            low = mid;
+        } else {
+            low = mid;
+            break;
+        }
+    }
+
+    return entries[low].msgid == msgid ? &entries[low] : nullptr;
+}
 
 #ifdef __GNUC__
 #	pragma GCC diagnostic pop
