@@ -77,6 +77,7 @@ constexpr uint8_t DYT_GUIDANCE_COMMAND_CRC = 169;
 constexpr uint32_t DYT_SYSTEM_STATUS_MSG_ID = 12926;
 constexpr uint32_t DYT_TARGET_STATUS_MSG_ID = 12927;
 constexpr uint32_t DYT_STATUS_REPLY_MSG_ID = 12928;
+constexpr uint32_t SDM50_STATUS_MSG_ID = 12929;
 }
 
 QGC_LOGGING_CATEGORY(VehicleLog, "VehicleLog")
@@ -545,6 +546,9 @@ void Vehicle::_mavlinkMessageReceived(LinkInterface* link, mavlink_message_t mes
         break;
     case DYT_STATUS_REPLY_MSG_ID:
         _handleDytStatusReply(message);
+        break;
+    case SDM50_STATUS_MSG_ID:
+        _handleSdm50Status(message);
         break;
     case MAVLINK_MSG_ID_HOME_POSITION:
         _handleHomePosition(message);
@@ -2349,14 +2353,11 @@ void Vehicle::_handleDytTargetStatus(const mavlink_message_t& message)
     const uint16_t flags = _MAV_RETURN_uint16_t(&message, 74);
     _dytTargetValid = flags & 1u;
     _dytRangeM = _MAV_RETURN_float(&message, 56);
-    _dytClosingSpeedMps = (flags & (1u << 11)) != 0
-        ? (message.len >= 87 ? _MAV_RETURN_float(&message, 83) : 0.0)
-        : qQNaN();
 
     QStringList targetFlags;
     const char* flagNames[] = {"valid", "auto-hint", "enhance", "recording", "motor", "follow",
-                               "laser", "selftest", "gyro-fault", "servo-fault", "image-fault", "closing-speed"};
-    for (int bit = 0; bit < 12; ++bit) {
+                               "laser", "selftest", "gyro-fault", "servo-fault", "image-fault"};
+    for (int bit = 0; bit < 11; ++bit) {
         if (flags & (1u << bit)) {
             targetFlags.append(QString::fromLatin1(flagNames[bit]));
         }
@@ -2367,9 +2368,9 @@ void Vehicle::_handleDytTargetStatus(const mavlink_message_t& message)
                            "LOS x/y: %6 / %7 rad\n"
                            "Gimbal roll/pitch-frame/pitch/yaw: %8 / %9 / %10 / %11 rad\n"
                            "Gimbal rates roll/pitch/yaw: %12 / %13 / %14 rad/s\n"
-                           "BBox: %15 × %16 px\nRange: %17 m  Closing speed: %18 m/s  Zoom: %19×\n"
-                           "Frame dt/RX age: %20 / %21 s\n"
-                           "Parser errors: %22  Raw: %23 %24 %25 selftest=%26")
+                           "BBox: %15 × %16 px\nRange: %17 m  Zoom: %18×\n"
+                           "Frame dt/RX age: %19 / %20 s\n"
+                           "Parser errors: %21  Raw: %22 %23 %24 selftest=%25")
         .arg(_MAV_RETURN_uint32_t(&message, 8))
         .arg(_MAV_RETURN_uint8_t(&message, 76))
         .arg(_MAV_RETURN_uint8_t(&message, 77))
@@ -2387,7 +2388,6 @@ void Vehicle::_handleDytTargetStatus(const mavlink_message_t& message)
         .arg(_MAV_RETURN_float(&message, 48), 0, 'f', 1)
         .arg(_MAV_RETURN_float(&message, 52), 0, 'f', 1)
         .arg(_dytRangeM, 0, 'f', 2)
-        .arg(_dytClosingSpeedMps, 0, 'f', 2)
         .arg(_MAV_RETURN_float(&message, 60), 0, 'f', 1)
         .arg(_MAV_RETURN_float(&message, 64), 0, 'f', 3)
         .arg(_MAV_RETURN_float(&message, 68), 0, 'f', 3)
@@ -2398,6 +2398,17 @@ void Vehicle::_handleDytTargetStatus(const mavlink_message_t& message)
         .arg(static_cast<qulonglong>(_MAV_RETURN_uint8_t(&message, 82)), 2, 16, QLatin1Char('0'));
 
     _dytTelemetryAvailable = true;
+    emit dytTelemetryChanged();
+}
+
+void Vehicle::_handleSdm50Status(const mavlink_message_t& message)
+{
+    if (message.len < 21) {
+        return;
+    }
+
+    const bool valid = _MAV_RETURN_uint8_t(&message, 20) == 1;
+    _sdm50ClosingSpeedMps = valid ? _MAV_RETURN_float(&message, 16) : qQNaN();
     emit dytTelemetryChanged();
 }
 

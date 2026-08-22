@@ -46,8 +46,8 @@ Item {
     property bool   _sdm50Valid:            _sdm50Available && isFinite(_sdm50DistanceM) &&
                                              isFinite(_sdm50MaxDistanceM) && _sdm50DistanceM >= 0.05 &&
                                              _sdm50DistanceM < _sdm50MaxDistanceM
-    property real   _dytClosingSpeedMps:    _activeVehicle ? Number(_activeVehicle.dytClosingSpeedMps) : NaN
-    property bool   _dytClosingSpeedValid:  isFinite(_dytClosingSpeedMps)
+    property real   _sdm50ClosingSpeedMps:  _activeVehicle ? Number(_activeVehicle.sdm50ClosingSpeedMps) : NaN
+    property bool   _sdm50SpeedValid:       isFinite(_sdm50ClosingSpeedMps)
     property var    _planMasterController:  globals.planMasterControllerFlyView
     property var    _missionController:     _planMasterController.missionController
     property var    _geoFenceController:    _planMasterController.geoFenceController
@@ -279,9 +279,9 @@ Item {
             }
 
             QGCLabel {
-                text: _dytClosingSpeedValid
-                      ? qsTr("DYT closing speed: %1 m/s").arg(_dytClosingSpeedMps.toFixed(2))
-                      : qsTr("DYT closing speed: -- m/s")
+                text: _sdm50SpeedValid
+                      ? qsTr("Closing speed: %1 m/s").arg(_sdm50ClosingSpeedMps.toFixed(2))
+                      : qsTr("Closing speed: -- m/s")
                 Layout.fillWidth: true
             }
         }

@@ -211,7 +211,7 @@ public:
     Q_PROPERTY(QString           dytCommandResultText           READ dytCommandResultText                                          NOTIFY dytTelemetryChanged)
     Q_PROPERTY(bool              dytTargetValid                 READ dytTargetValid                                                NOTIFY dytTelemetryChanged)
     Q_PROPERTY(double            dytRangeM                      READ dytRangeM                                                     NOTIFY dytTelemetryChanged)
-    Q_PROPERTY(double            dytClosingSpeedMps             READ dytClosingSpeedMps                                            NOTIFY dytTelemetryChanged)
+    Q_PROPERTY(double            sdm50ClosingSpeedMps           READ sdm50ClosingSpeedMps                                          NOTIFY dytTelemetryChanged)
     Q_PROPERTY(bool              dytNetTriggerSent              READ dytNetTriggerSent                                             NOTIFY dytTelemetryChanged)
     Q_PROPERTY(uint              dytNetTriggerCount             READ dytNetTriggerCount                                            NOTIFY dytTelemetryChanged)
     Q_PROPERTY(QString           dytGuidanceDetails             READ dytGuidanceDetails                                            NOTIFY dytTelemetryChanged)
@@ -448,7 +448,7 @@ public:
     QString dytCommandResultText    () const { return _dytCommandResultText; }
     bool    dytTargetValid          () const { return _dytTargetValid; }
     double  dytRangeM               () const { return _dytRangeM; }
-    double  dytClosingSpeedMps      () const { return _dytClosingSpeedMps; }
+    double  sdm50ClosingSpeedMps    () const { return _sdm50ClosingSpeedMps; }
     bool    dytNetTriggerSent       () const { return _dytNetTriggerSent; }
     uint    dytNetTriggerCount      () const { return _dytNetTriggerCount; }
     QString dytGuidanceDetails      () const { return _dytGuidanceDetails; }
@@ -1002,6 +1002,7 @@ private:
     void _handleDytSystemStatus         (const mavlink_message_t& message);
     void _handleDytTargetStatus         (const mavlink_message_t& message);
     void _handleDytStatusReply          (const mavlink_message_t& message);
+    void _handleSdm50Status             (const mavlink_message_t& message);
     void _handleEvent(uint8_t comp_id, std::unique_ptr<events::parser::ParsedEvent> event);
     // ArduPilot dialect messages
 #if !defined(QGC_NO_ARDUPILOT_DIALECT)
@@ -1066,7 +1067,7 @@ private:
     int             _dytVehicleType = 0;
     int             _dytGuidancePhase = 0;
     double          _dytRangeM = qQNaN();
-    double          _dytClosingSpeedMps = qQNaN();
+    double          _sdm50ClosingSpeedMps = qQNaN();
     uint32_t        _dytNetTriggerCount = 0;
     uint32_t        _dytNextRequestId = 0;
     uint32_t        _dytPendingRequestId = 0;

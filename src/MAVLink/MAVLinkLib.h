@@ -80,8 +80,9 @@ static inline const mavlink_msg_entry_t* mavlink_get_msg_entry(uint32_t msgid)
     static const mavlink_msg_entry_t dytEntries[] = {
         { 12925, 169, 7, 7, 3, 4, 5 },
         { 12926, 0, 91, 91, 0, 0, 0 },
-        { 12927, 157, 83, 87, 0, 0, 0 },
+        { 12927, 157, 83, 83, 0, 0, 0 },
         { 12928, 227, 29, 29, 0, 0, 0 },
+        { 12929, 172, 21, 21, 0, 0, 0 },
     };
 
     for (const mavlink_msg_entry_t& entry : dytEntries) {
